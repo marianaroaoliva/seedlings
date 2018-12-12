@@ -1,0 +1,4 @@
+datamuse
+nltk
+flask
+pyPdf
