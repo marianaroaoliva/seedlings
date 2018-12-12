@@ -133,7 +133,7 @@ def plant(start, domain,pos=""):
                 history.append(next)
                 toPrint.append(next + "|" + word)
                 a_next = getSimilarWord(next, history)
-                toPrint.append(" "*(len(next)-len(a_next)) + a_next + "/")
+                toPrint.append(" "*(len(next)-len(a_next)) + a_next + "\\")
                 word = a_next
                 goal = "n"
                 break
@@ -142,13 +142,13 @@ def plant(start, domain,pos=""):
                 history.append(next)
                 toPrint.append(word + "|" + next)
                 next = getSimilarWord(next, history)
-                toPrint.append(" "*len(word) + "/" + next)
+                toPrint.append("/" + next)
                 word = next
                 goal = ""
                 break
 
-    reversePrint(toPrint)
-    return toPrint
+    # reversePrint(toPrint)
+    return toPrint, word
 
 def ivy(start, domain):
     print("--------------------------------------")
@@ -171,7 +171,7 @@ def ivy(start, domain):
         if word is '.' or ("NN" in getPosTag(word) and len(history) > 5):
             break
     print("")
-    return history
+    return history, history[-1]
 
 def dandelion(word, domain):
     # rel_trg=cow, words triggered by
@@ -199,7 +199,7 @@ def dandelion(word, domain):
     shuffle(history)
     print()
     print("->", history[-1])
-    return history
+    return history, history[-1]
 
 def bamboo(start, domain):
     # &sp=b*d: starts with b, ends with d
@@ -224,7 +224,7 @@ def bamboo(start, domain):
             word = w
             print(w)
             break
-    return history
+    return history, history[-1]
 
 def koru(seed, domain=""):
     #ant
@@ -265,14 +265,14 @@ def koru(seed, domain=""):
             print("-",w)
             break
 
-    return history
+    return history, history[-1]
 
 def pine(seed, domain):
     # sp=t?????k
     print("--------------------------------------")
     print("Plant " + seed + " in " + domain + " as pine:")
     word = seed
-    history = [word]
+    history = []
     context = []
     s = word[0]
     e = word[len(word)-1]
@@ -291,7 +291,7 @@ def pine(seed, domain):
             word = w
             print(w)
             break
-    return history
+    return history, choice(history)
 # def some root ....
 
 def gingko(center,domain):
@@ -311,7 +311,7 @@ def gingko(center,domain):
             history.append(w)
             print(w + " " + word)
             break
-    return history
+    return history, choice(history)
 
 PLANTS = {
 "gingko":gingko,
