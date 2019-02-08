@@ -20,7 +20,7 @@ You can find a demo [here](http://chenqianxun.com/seedlings/demo/).(Best Viewed 
 2. More about *Seedlings_*
 3. Basic introduction to d3.js, a JavaScript library for producing dynamic, interactive data visualizations in web browsers.
 
-4. Build *Seedlings_* as a web app
+4. Build *Seedlings_* as a web app (?)
 
 ## Outline
 
@@ -158,7 +158,7 @@ You can also follow the [install guide here](https://pip.pypa.io/en/stable/insta
 
 #### c. Install virtualenv
 virtualenv creates isolated python environments tied to specific projects.
-
+f
 ```
 sudo pip install virtualenv
 ```
