@@ -7,10 +7,10 @@ import plant
 import json
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'the quick brown fox jumps over the lazy   dog'
-app.config['CORS_HEADERS'] = 'Content-Type'
+# app.config['SECRET_KEY'] = 'the quick brown fox jumps over the lazy   dog'
+# app.config['CORS_HEADERS'] = 'Content-Type'
 
-cors = CORS(app, resources={r"/datamuse": {"origins": "http://0.0.0.0:8000"}})
+cors = CORS(app, resources={r"/datamuse": {"origins": "*"}})
 
 @app.route("/hello")
 def hello():
@@ -18,6 +18,7 @@ def hello():
 
 @app.route('/datamuse', methods=['GET'])
 @cross_origin(origin='localhost',headers=['Content- Type','Authorization'])
+
 def askDatamuse():
     w = request.args.get('word')
     c = request.args.get('domain')
@@ -30,7 +31,7 @@ def askDatamuse():
     "domain":c,
     "endWord":lastWord,
     "results":result
-  }
+    }
     return json.dumps(data)
 
 if __name__ == "__main__":

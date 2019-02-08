@@ -5,7 +5,7 @@ function datamuse(params, callback) {
   for (var item in params) {
     query += item + "=" + params[item] + "&"
   }
-    console.log(query)
+    // console.log(query)
     $.ajax({
     url : "http://cqx931.pythonanywhere.com/datamuse?" + query,
     type : 'GET',
@@ -24,15 +24,14 @@ function datamuse(params, callback) {
         if (textStatus == 'timeout' || xhr.status == 500) {
             this.tryCount++;
             if (this.tryCount <= this.retryLimit) {
+                //try again
                 $.ajax(this);
                 return;
             }
-            callback("error");
-            $('.message').html("Oops, please try another seed.")
+            return;
         }
         else {
             //handle error
-            callback("error")
         }
     }
 });

@@ -1,0 +1,42 @@
+.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1px;
+  stroke-dasharray: 7, 7;
+}
+
+.node rect {
+  fill: rgba(255,255,255,0);
+  /* stroke: #AAA;
+  stroke-width: 1px; */
+  cursor: pointer;
+}
+
+.triggernode rect {
+  fill: #fff;
+  stroke: #EEE;
+  stroke-width: 1px;
+  /* cursor: text; */
+}
+
+.selectedtrigger rect {
+  fill: #fff;
+  stroke: #AAA;
+  stroke-width: 1px;
+}
+
+.selectedtrigger input[type="text"] {
+    width: 70;
+}
+
+text {
+  font: 14px sans-serif;
+  text-anchor: middle;
+  pointer-events: None;
+  font: 14px 'source code pro';
+}
+
+.sourcewordtext {
+  text-anchor: middle;
+  pointer-events: auto;
+}

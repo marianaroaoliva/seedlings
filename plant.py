@@ -1,12 +1,11 @@
-# Seedlings_
-
-# If you could transplant a word into a new context
+# Seedlings_ command interface
+# Transplant a word into a new context
 
 import json
 import sys
 from random import random, shuffle, choice
 from datamuse import datamuse
-import nltk #?
+import nltk
 
 api = datamuse.Datamuse()
 
@@ -42,19 +41,12 @@ def getData():
 
     print("Data saved as data.json!")
 
-def processData(word):
-    with open('data.json') as json_data:
-        d = json.load(json_data)
-    for item in d[word+"\n"]["art_lc"]:
-        print(nltk.pos_tag([item['word']])[0][1])
-    print('----------')
-    for item in d[word+"\n"]["science_lc"]:
-        print(nltk.pos_tag([item['word']]))
-
 def getPosTag(word):
-    entry = nltk.pos_tag([word])[0]
+    entry = nltk.pos_tag([word.lower()])
     if len(entry) > 1:
-        tag = entry[1]
+        tag = entry[0][1]
+    else:
+        tag = ""
     return tag
 
 def getSimilarWord(word, avoid=[]):
@@ -97,10 +89,8 @@ def plant(start, domain,pos=""):
     toPrint = []
     context = []
 
-
-    # toPrint.append("--------------------------------------")
-    # toPrint.append("Plant " + start + " in " + domain + ":")
-
+    print("--------------------------------------")
+    print("Plant " + start + " in " + domain + ":")
 
     for i in range(MAX):
         pos = getPosTag(word)
@@ -113,7 +103,7 @@ def plant(start, domain,pos=""):
             context = api.words(rel_jja=word, topics=domain, max=SPEED, md="pf")
 
         if len(context) == 0:
-            word = getSimilarWord(next, history)
+            word = getSimilarWord(word, history)
             context = api.words(rel_jja=word, topics=domain, max=SPEED, md="pf")
             continue
 
@@ -134,6 +124,7 @@ def plant(start, domain,pos=""):
                 toPrint.append(next + "|" + word)
                 a_next = getSimilarWord(next, history)
                 toPrint.append(" "*(len(next)-len(a_next)) + a_next + "\\")
+                print(" "*(len(next)-len(a_next)) + a_next + "\\")
                 word = a_next
                 goal = "n"
                 break
@@ -141,8 +132,11 @@ def plant(start, domain,pos=""):
                 next = item["word"]
                 history.append(next)
                 toPrint.append(word + "|" + next)
+                print(word + "|" + next)
+
                 next = getSimilarWord(next, history)
                 toPrint.append("/" + next)
+                print("/" + next)
                 word = next
                 goal = ""
                 break
@@ -168,10 +162,14 @@ def ivy(start, domain):
             print(" " + next, end="", flush=True)
             word = next
             break
-        if word is '.' or ("NN" in getPosTag(word) and len(history) > 5):
+        if word is '.' or ("NN" in getPosTag(word) and len(history) > 5) or len(history) > 13:
             break
     print("")
-    return history, history[-1]
+    if (history[-1] not in ".?!,'"):
+         lastword = history[-1]
+    else:
+        lastword = history[-2]
+    return history, lastword
 
 def dandelion(word, domain):
     # rel_trg=cow, words triggered by
@@ -294,10 +292,10 @@ def pine(seed, domain):
     return history, choice(history)
 # def some root ....
 
-def gingko(center,domain):
+def ginkgo(center,domain):
     # input has to be noun
     print("--------------------------------------")
-    print("Plant " + center + " in " + domain + " as gingko:")
+    print("Plant " + center + " in " + domain + " as ginkgo:")
     word = center
     history = [word]
     context = []
@@ -314,26 +312,27 @@ def gingko(center,domain):
     return history, choice(history)
 
 PLANTS = {
-"gingko":gingko,
+"ginkgo":ginkgo,
 "plant":plant,
-"koru":koru,
 "ivy":ivy,
-"bamboo":bamboo,
 "pine":pine,
-"dandelion":dandelion
+"dandelion":dandelion,
+"bamboo":bamboo,
+"koru":koru
 }
 
 def random(start, domain):
     word = start
     last = ""
     for i in range(7):
+        print("HERE:",word)
         tag = getPosTag(word)
         while(True):
             key, function = choice(list(PLANTS.items()))
             if key is not last:
-                if (key is "gingko" and "NN" in tag) or (key in "plant koru" and tag in "NN NNS JJ") or key in "ivy bamboo pine dandelion":
+                if (key is "ginkgo" and "NN" in tag) or (key in "plant koru" and tag in "NN NNS JJ") or key in "ivy bamboo pine dandelion":
                     break
-        word = function(word, domain)
+        history, word = function(word, domain)
         last = key
     return
 
@@ -342,28 +341,25 @@ def datamuse(word, context, type):
     return f(word, context)
 
 #plant: nn or jj
-#gingko: nn
+#ginkgo: nn
 #koru: adj/nn
 #random: bamboo, pine, ivy, dandelion
 ############
 
-# transplant anguish in paradise as random
-
 def test():
-    ivy("blue","destruction")
+    random("anguish","paradise")
 
 def demo():
-    plant("soft","logic")
-    gingko("logic","sea")
-    ivy("dream","disgust")
-    koru("binary")
-    bamboo("bitterness","ocean")
+    plant("soft","postmodernism")
+    ginkgo("logic","sea")
+    ivy("dream","proximity")
+    dandelion("utopia","translation")
     pine("justice","alchemy")
-    #dandelion
+    koru("binary")
+    bamboo("bitterness","desert")
 
 if __name__ == '__main__':
-    # print ('Number of arguments:', len(sys.argv), 'arguments.')
-    # print ('Argument List:', str(sys.argv))
+
     if len(sys.argv) == 2:
         if sys.argv[1] == "test":
             test()
@@ -376,7 +372,7 @@ if __name__ == '__main__':
     elif (len(sys.argv) >= 4 and "as" in sys.argv and len(sys.argv) > sys.argv.index("as") + 1):
         idx = sys.argv.index("as")
         idx += 1
-        if sys.argv[idx] == "gingko":
+        if sys.argv[idx] == "ginkgo":
             sunflower(sys.argv[1],sys.argv[3])
         elif sys.argv[idx] == "ivy":
             ivy(sys.argv[1],sys.argv[3])

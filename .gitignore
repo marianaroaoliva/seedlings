@@ -1,4 +1,7 @@
-visuals
-test
-venv
-__pycache__
+test/
+text/
+visuals/
+print/
+venv/
+_drafts/
+__pycache__/

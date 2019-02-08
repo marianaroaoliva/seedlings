@@ -1,4 +1,0 @@
-datamuse
-nltk
-flask
-pyPdf
