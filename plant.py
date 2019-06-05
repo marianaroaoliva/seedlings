@@ -1,11 +1,11 @@
 # Seedlings_ command interface
 # Transplant a word into a new context
 
-import json
 import sys
-from random import random, shuffle, choice
+from random import shuffle, choice
 from datamuse import datamuse
 import nltk
+import re
 
 api = datamuse.Datamuse()
 
@@ -24,26 +24,9 @@ SPEED = 50
 ######################################
 # Tools
 
-def getData():
-    for word in words:
-        dict[word] = {}
-        for field in FIELDS:
-            bga = api.words(rel_bga= word, topics=field, max=MAX)
-            dict[word][field+"_bga"] = bga
-            lc = api.words(lc= word, topics=field, max=MAX)
-            dict[word][field+"_lc"] = lc
-            ml = api.words(ml= word, topics=field, max=MAX)
-            dict[word][field+"_ml"] = ml
-        print('.')
-
-    with open('data.json', 'w') as fp:
-        json.dump(dict, fp)
-
-    print("Data saved as data.json!")
-
 def getPosTag(word):
     entry = nltk.pos_tag([word.lower()])
-    if len(entry) > 1:
+    if len(entry) > 0:
         tag = entry[0][1]
     else:
         tag = ""
@@ -51,27 +34,29 @@ def getPosTag(word):
 
 def getSimilarWord(word, avoid=[]):
     list = api.words(ml=word, max=SPEED)
+    list = list[:5]
+    shuffle(list)
     word_pos = getPosTag(word)
     for item in list:
         w = item["word"]
         if getPosTag(w) == word_pos and w is not word and " " not in word and w not in avoid:
             return w
+    # if not satisfying the requirements above, still return the last result
+    return w
 
 def isBad(item, history, domain):
     w = item["word"]
-    #
     frequency = float(item["tags"][-1][2:])
-    tag = w in history or domain in w or " " in w or frequency < 1 or "-" in w or w in '.?-:;!'
-    # if tag: print( w in history, domain in w, " " in w, frequency < 1, tag)
+    tag = w in history or domain in w or " " in w or frequency < 1 or re.match("^[a-zA-Z]*$", w) is None
     return tag
 
 def isGood(item, history, domain):
     w = item["word"]
     #
     frequency = float(item["tags"][-1][2:])
-    tag = w in history or domain in w or " " in w or frequency > 200 or "-" in w
+    tag = not isBad(item, history, domain) and frequency < 400
     # if tag: print( w in history, domain in w, " " in w, frequency < 1, tag)
-    return not tag
+    return tag
 
 def reversePrint(toPrint):
     toPrint.reverse()
@@ -94,13 +79,15 @@ def plant(start, domain,pos=""):
 
     for i in range(MAX):
         pos = getPosTag(word)
-
         if pos == "NN" or pos =="NNS":
             # print("CASE", "NN")
             context = api.words(rel_jjb=word, topics=domain, max=SPEED, md="pf")
-        elif pos == "JJ":
+        elif pos == "JJ" or "RB" in pos:
             # print("CASE", "JJ")
             context = api.words(rel_jja=word, topics=domain, max=SPEED, md="pf")
+        else:
+            # edge case: when getPosTag can't return any, treat as nn
+            context = api.words(rel_jjb=word, topics=domain, max=SPEED, md="pf")
 
         if len(context) == 0:
             word = getSimilarWord(word, history)
@@ -126,21 +113,19 @@ def plant(start, domain,pos=""):
                 toPrint.append(" "*(len(next)-len(a_next)) + a_next + "\\")
                 print(" "*(len(next)-len(a_next)) + a_next + "\\")
                 word = a_next
-                goal = "n"
                 break
             elif "n" in pos:
                 next = item["word"]
                 history.append(next)
                 toPrint.append(word + "|" + next)
                 print(word + "|" + next)
-
                 next = getSimilarWord(next, history)
                 toPrint.append("/" + next)
                 print("/" + next)
                 word = next
-                goal = ""
                 break
 
+    print("-->", word)
     # reversePrint(toPrint)
     return toPrint, word
 
@@ -149,13 +134,24 @@ def ivy(start, domain):
     print("Plant " + start + " in " + domain + " as ivy :")
     word = start
     history = [word]
-    context = []
+    count = 0;
     print(word, end="", flush=True)
-    while(True):
+    while( count < 50):
+
         next = api.words(rel_bga=word, topics=domain, max=SPEED, md="pf")
+        if(len(next) == 0):
+            # if the word can't get any result, return
+            break
+        count = count + 1;
         shuffle(next)
         for item in reversed(next):
-            if not isGood(item, history,domain):
+            if not isGood(item, history, domain):
+                # print("not good", item["word"], float(item["tags"][-1][2:]))
+                continue
+            if isBad(item, history, domain):
+                # print("isBad", item["word"], float(item["tags"][-1][2:]))
+                continue
+            if len(history) < 4 and item["word"] is ".":
                 continue
             next = item["word"]
             history.append(next)
@@ -164,11 +160,14 @@ def ivy(start, domain):
             break
         if word is '.' or ("NN" in getPosTag(word) and len(history) > 5) or len(history) > 13:
             break
-    print("")
-    if (history[-1] not in ".?!,'"):
-         lastword = history[-1]
-    else:
-        lastword = history[-2]
+
+    idk = -1;
+    if (history[-1] in ".?!,'"):
+         idk = idk - 1
+    while(-idk <= len(history) and "NN" not in getPosTag(word)):
+        idk = idk - 1
+    lastword = history[idk]
+    print("-->", lastword)
     return history, lastword
 
 def dandelion(word, domain):
@@ -178,11 +177,12 @@ def dandelion(word, domain):
     print("Plant " + word + " in " + domain + " as dandelion :")
     history = []
     next = api.words(rel_trg=word, topics=domain, max=SPEED, md="f")
-    while(len(next) == 0):
+    while(len(next) < 3):
         similar = api.words(ml=word, max=SPEED, md="f")
+        similar = similar[:5]
+        shuffle(similar)
         word = similar[0]["word"]
         next = api.words(rel_trg=word, topics=domain, max=SPEED, md="f")
-
     shuffle(next)
     for item in next:
         if isBad(item, history,domain):
@@ -205,10 +205,9 @@ def bamboo(start, domain):
     print("Plant " + start + " in " + domain + " as bamboo:")
     word = start
     history = [word]
-    context = []
     print(word)
-    for i in range(MAX):
-        next = api.words(sp= word[len(word)-1] + "*", topics=domain, max=SPEED, md="f")
+    for i in range(5):
+        next = api.words(sp= "*"+ word[0], topics=domain, max=SPEED, md="f")
         if len(next) == 0:
             print("Nothing is grown")
             break
@@ -222,6 +221,7 @@ def bamboo(start, domain):
             word = w
             print(w)
             break
+    print("-->", history[-1])
     return history, history[-1]
 
 def koru(seed, domain=""):
@@ -230,7 +230,6 @@ def koru(seed, domain=""):
     print("Plant " + seed + " as koru:")
     word = seed
     history = [word]
-    context = []
     print(word)
     for i in range(MAX):
         next = api.words(rel_ant=word, max=SPEED, md="f")
@@ -262,7 +261,7 @@ def koru(seed, domain=""):
             word = w
             print("-",w)
             break
-
+    print("-->", history[-1])
     return history, history[-1]
 
 def pine(seed, domain):
@@ -271,7 +270,6 @@ def pine(seed, domain):
     print("Plant " + seed + " in " + domain + " as pine:")
     word = seed
     history = []
-    context = []
     s = word[0]
     e = word[len(word)-1]
 
@@ -289,7 +287,9 @@ def pine(seed, domain):
             word = w
             print(w)
             break
-    return history, choice(history)
+    lastword = choice(history)
+    print("-->", lastword)
+    return history, lastword
 # def some root ....
 
 def ginkgo(center,domain):
@@ -298,7 +298,6 @@ def ginkgo(center,domain):
     print("Plant " + center + " in " + domain + " as ginkgo:")
     word = center
     history = [word]
-    context = []
     for i in range(MAX):
         next = api.words(rel_jjb=domain, topics=domain, max=SPEED, md="pf")
         shuffle(next)
@@ -309,7 +308,9 @@ def ginkgo(center,domain):
             history.append(w)
             print(w + " " + word)
             break
-    return history, choice(history)
+    lastword = choice(history)
+    print("-->", lastword)
+    return history, lastword
 
 PLANTS = {
 "ginkgo":ginkgo,
@@ -321,7 +322,7 @@ PLANTS = {
 "koru":koru
 }
 
-def random(start, domain):
+def randomPlant(start, domain):
     word = start
     last = ""
     for i in range(7):
@@ -347,10 +348,15 @@ def datamuse(word, context, type):
 ############
 
 def test():
-    random("anguish","paradise")
+    print(getPosTag("more"), "RB" in getPosTag("more"));
+    context = api.words(rel_jja="more", topics="environment", max=SPEED, md="pf")
+    print(context)
+    # detecting edge cases
+    # for i in range(10):
+    #     plant("ancient","environment")
 
 def demo():
-    plant("soft","postmodernism")
+    plant("technology","consciousness")
     ginkgo("logic","sea")
     ivy("dream","proximity")
     dandelion("utopia","translation")
@@ -373,7 +379,7 @@ if __name__ == '__main__':
         idx = sys.argv.index("as")
         idx += 1
         if sys.argv[idx] == "ginkgo":
-            sunflower(sys.argv[1],sys.argv[3])
+            ginkgo(sys.argv[1],sys.argv[3])
         elif sys.argv[idx] == "ivy":
             ivy(sys.argv[1],sys.argv[3])
         elif sys.argv[idx] == "koru":
@@ -385,7 +391,7 @@ if __name__ == '__main__':
         elif sys.argv[idx] == "dandelion":
             dandelion(sys.argv[1],sys.argv[3])
         elif sys.argv[idx] == "random":
-            random(sys.argv[1],sys.argv[3])
+            randomPlant(sys.argv[1],sys.argv[3])
         else:
             plant(sys.argv[1],sys.argv[3])
 
