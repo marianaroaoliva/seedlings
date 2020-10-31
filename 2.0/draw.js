@@ -886,9 +886,9 @@ let soil = [];
 initializeSoil();
 
 plant("distance",'anatomy', "pine", 150, 500)
-plant("humanity",'technology', "ivy", 450, 450, 15000)
-plant("soap",'sea', "ginkgo", 940, 530, 20000)
-plant("body",'literature', "plant", 1400, 510, 30000)
+plant("humanity",'technology', "ivy", 250, 450, 15000)
+plant("soap",'sea', "ginkgo", 740, 530, 20000)
+plant("body",'literature', "plant", 1000, 510, 30000)
 /**********************************/
 
 function checkIntersections(rootId, x, y, x1, y1){
