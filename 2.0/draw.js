@@ -25,6 +25,7 @@ class soilWord {
     // todo;
   }
 }
+
 class Root {
 
   constructor(id, plantId, x, y, a) {
@@ -888,7 +889,7 @@ initializeSoil();
 
 plant("soap",'sea', "ginkgo", 150, 500)
 plant("humanity",'technology', "ivy", 250, 450, 15000)
-plant("distance",'anatomy', "pine", 600, 530, 20000)
+// plant("distance",'anatomy', "pine", 600, 530, 20000)
 plant("body",'literature', "plant", 1000, 510, 30000)
 /**********************************/
 
