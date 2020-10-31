@@ -1,6 +1,7 @@
 // noise
 noise.seed(Math.random());
 const SCALE_FACTOR = 20;
+const STROKE_COLOR = "grey";
 $(document).ready(function() {
 
 class soilWord {
@@ -68,7 +69,7 @@ class Root {
       // const duplicate = this.history.includes(this.currentPos);
 
       this.wrapper.append("line")
-        .style("stroke", "grey")
+        .style("stroke", STROKE_COLOR)
         .attr("x1", this.currentPos.x)
         .attr("y1", this.currentPos.y)
         .attr("x2", this.nextPos.x)
@@ -296,7 +297,7 @@ class Plant{
     // this.Height = getTextWidth(this.word) + 40;
     // MAIN BRANCH
     c.append("line")                 // attach a line
-      .style("stroke", "grey")         // colour the line
+      .style("stroke", STROKE_COLOR)         // colour the line
       .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
       .attr("x1", x)     // x position of the first end of the line
       .attr("y1", y)      // y position of the first end of the line
@@ -344,7 +345,7 @@ class Ginkgo extends Plant {
       var endx = this.LENGTH * Math.cos(Math.radians(angle)) + x
 
       b.append("line")                 // attach a line
-        .style("stroke", "black")
+        .style("stroke", STROKE_COLOR)
         .style("position", "absolute")         // colour the line
         .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
         .attr("x1", x)     // x position of the first end of the line
@@ -381,7 +382,7 @@ class Ginkgo extends Plant {
     // console.log(seed)
     // MAIN BRANCH
     c.append("line")                 // attach a line
-      .style("stroke", "black")         // colour the line
+      .style("stroke", STROKE_COLOR)         // colour the line
       .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
       .attr("x1", x)     // x position of the first end of the line
       .attr("y1", y)      // y position of the first end of the line
@@ -447,7 +448,7 @@ class Pine extends Plant {
 
        // MAIN BRANCH
        c.append("line")                 // attach a line
-         .style("stroke", "black")         // colour the line
+         .style("stroke", STROKE_COLOR)         // colour the line
          .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
          .attr("x1", x)     // x position of the first end of the line
          .attr("y1", y)      // y position of the first end of the line
@@ -574,7 +575,7 @@ class Ivy extends Plant {
             .attr("class","chunk");
 
      c.append("line")
-       .style("stroke", "black")         // colour the line
+       .style("stroke", STROKE_COLOR)         // colour the line
        .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
        .attr("x1", x)     // x position of the first end of the line
        .attr("y1", y)      // y position of the first end of the line
@@ -589,7 +590,7 @@ class Ivy extends Plant {
 
        function drawIvyStart(x1,y1,x2,y2,) {
          c.append("line")                 // attach a line
-           .style("stroke", "black")         // colour the line
+           .style("stroke", STROKE_COLOR)         // colour the line
            .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
            .attr("x1", x1)     // x position of the first end of the line
            .attr("y1", y1)      // y position of the first end of the line
@@ -633,7 +634,7 @@ class Dandelion extends Plant {
      var endx = l * Math.cos(Math.radians(angle)) + this.x
 
      b.append("line")                 // attach a line
-       .style("stroke", "black")
+       .style("stroke", STROKE_COLOR)
        .style("position", "absolute")         // colour the line
        .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
        .attr("x1", this.x)     // x position of the first end of the line
@@ -676,7 +677,7 @@ class Dandelion extends Plant {
      var seed = drawSeed(this.word,x,y,c);
       // MAIN BRANCH
       c.append("line")                 // attach a line
-        .style("stroke", "black")         // colour the line
+        .style("stroke", STROKE_COLOR)         // colour the line
         .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
         .attr("x1", x)     // x position of the first end of the line
         .attr("y1", y)      // y position of the first end of the line
@@ -1085,7 +1086,7 @@ function drawDomain(domain,x,y,g) {
 
 function drawGround(x,y,g) {
   g.append("line")                 // attach a line
-    .style("stroke", "black")         // colour the line
+    .style("stroke", STROKE_COLOR)         // colour the line
     .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
     .attr("x1", x-GROUND_WIDTH/2)     // x position of the first end of the line
     .attr("y1", y)      // y position of the first end of the line
