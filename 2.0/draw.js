@@ -885,10 +885,8 @@ let soil = [];
 
 initializeSoil();
 
-plant("thought",'nature', "pine", 150, 600)
-
-plant("anguish",'society', "dandelion", 400, 650, 7000)
-plant("humanity",'technology', "ivy", 550, 550, 15000)
+plant("distance",'anatomy', "pine", 150, 600)
+plant("humanity",'technology', "ivy", 450, 550, 15000)
 plant("soap",'sea', "ginkgo", 940, 630, 20000)
 plant("body",'literature', "plant", 1400, 610, 30000)
 /**********************************/
