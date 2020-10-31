@@ -6,6 +6,11 @@
     }
 }
 
+@font-face {
+  font-family: 'Monospace';
+  src: url('Monospace.ttf')  format('truetype');
+}
+
 svg, form, #remove{
   -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
@@ -177,7 +182,7 @@ button:hover, #run:hover, #remove:hover {
 } */
 
 /****** General CSS *******/
-g text {font: 14px 'source code pro';x: 655;y: 200;}
+g text {font: 14px 'Monospace';x: 655;y: 200;}
 
 .seedling > g{
   opacity: 0;
