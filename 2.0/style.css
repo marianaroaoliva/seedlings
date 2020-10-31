@@ -15,6 +15,9 @@ svg, form, #remove{
             user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
 }
+svg line{
+  opacity:0.5;
+}
 body{
   overflow-x: hidden;
 }

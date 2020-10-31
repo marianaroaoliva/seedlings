@@ -676,6 +676,7 @@ function clearCanvas() {
    lastWord = "";
 
 }
+
 function adjustView(y, now){
   y =  y - window.innerHeight + 200;
   console.log("VIEW:",y, now);

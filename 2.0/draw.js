@@ -231,7 +231,7 @@ class Plant{
     for (let j = 0; j < this.roots.length; j++) {
       this.roots[j].grow();
       const current = this.roots[j].grow();
-      if (Math.random() < 0.01) {
+      if (Math.random() < 0.02) {
         const newr = new Root(this.id +"_root_"+guid(), this.roots[0].plantId, current.pos.x, current.pos.y, current.angle);
         this.roots.push(newr);
       }
@@ -523,6 +523,11 @@ class Ivy extends Plant {
 
   calculateTime(){
     return START_DELAY + this.result.length * 1000 + 1000;
+  }
+
+  updateResult(result) {
+    this.result = result;
+    this.resultToBeDisplayed = Array.from(result).reverse();;
   }
 
   getNewWord(callback) {
@@ -886,11 +891,11 @@ var data = {
 let soil = [];
 
 initializeSoil();
-
-plant("soap",'sea', "ginkgo", 120, 500)
-plant("humanity",'technology', "ivy", 300, 450, 15000)
+adjustView(700);
+plant("soap",'sea', "ginkgo", 140, 700)
+plant("humanity",'technology', "ivy", 350, 650, 15000)
 // plant("distance",'anatomy', "pine", 600, 530, 20000)
-plant("body",'literature', "plant", 1000, 510, 30000)
+plant("body",'literature', "plant", 1000, 710, 30000)
 /**********************************/
 
 function checkIntersections(rootId, x, y, x1, y1){
@@ -944,7 +949,7 @@ function initializeSoil() {
 
   const punctuations = [",", ".",":","'","?","!","“","”"];
 
-  let xPos = 100, yPos = 600;
+  let xPos = 100, yPos = 800;
 
   jQuery.get('text.txt', function(data) {
     const allContexts = data.split("--");
