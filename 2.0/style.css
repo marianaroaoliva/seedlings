@@ -183,7 +183,12 @@ button:hover, #run:hover, #remove:hover {
 
 /****** General CSS *******/
 g text {font: 14px 'Monospace';x: 655;y: 200;}
-
+g text.soil {
+  z-index:30;
+}
+.roots {
+  z-index:1;
+}
 .seedling > g{
   opacity: 0;
   transition: 3s opacity;
