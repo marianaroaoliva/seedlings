@@ -887,7 +887,7 @@ initializeSoil();
 
 plant("distance",'anatomy', "pine", 150, 500)
 plant("humanity",'technology', "ivy", 250, 450, 15000)
-plant("soap",'sea', "ginkgo", 740, 530, 20000)
+plant("soap",'sea', "ginkgo", 600, 530, 20000)
 plant("body",'literature', "plant", 1000, 510, 30000)
 /**********************************/
 
