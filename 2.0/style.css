@@ -223,3 +223,12 @@ textPath {
    stroke: white;
    stroke-width: 2px;
  }
+ .bamboo text[class*="branch"], .bamboo text[class*="seed"], #verticalTest{
+   text-transform: uppercase;
+   text-orientation: upright;
+   writing-mode: tb;
+   letter-spacing: -1px;
+ }
+ .koruResult {
+   position:absolute;
+ }

@@ -68,7 +68,7 @@ class Root {
       // const duplicate = this.history.includes(this.currentPos);
 
       this.wrapper.append("line")
-        .style("stroke", "black")
+        .style("stroke", "grey")
         .attr("x1", this.currentPos.x)
         .attr("y1", this.currentPos.y)
         .attr("x2", this.nextPos.x)
@@ -96,6 +96,8 @@ class Plant{
     this.domain = data.domain;
     this.x = data.x;
     this.y = data.y;
+    this.currentP = {x:this.x,y:this.y};
+
     this.endPos;
     this.endWord;
 
@@ -109,6 +111,7 @@ class Plant{
     this.lifeSpan = 200;
 
     this.datamuseResultMax = 5;
+    this.HEIGHT = 100;
     // save it to all plants
     plants[this.id+""] = this;
   }
@@ -172,88 +175,8 @@ class Plant{
     return START_DELAY + this.result.length * 500 + 1000;
   }
 
+  growBranch(w, i) {
 
-  growRoots() {
-    for (let j = 0; j < this.roots.length; j++) {
-      this.roots[j].grow();
-      const current = this.roots[j].grow();
-      if (Math.random() < 0.01) {
-        const newr = new Root(this.id +"_root_"+guid(), this.roots[0].plantId, current.pos.x, current.pos.y, current.angle);
-        this.roots.push(newr);
-      }
-    }
-  }
-
-  grow() {
-    //setTimeout
-    let branchIdx = 0;
-    const gs = this.growingSpeed;
-    const self = this;
-
-    function  afterResult(data) {
-
-      self.updateResult(data.results);
-
-      const branchTimer = setInterval(() => {
-          if (self.result.length > 0) {
-            if(self.resultToBeDisplayed.length > 0) {
-              const w = self.resultToBeDisplayed.pop();
-              self.growBranch(w, branchIdx);
-            } else {
-              clearInterval(branchTimer);
-            }
-
-          }
-          branchIdx ++;
-        }, gs);
-
-      const rootTimer = setInterval(() => {
-        if (self.lifeSpan <= 0) clearInterval(rootTimer);
-        self.growRoots();
-        self.lifeSpan --;
-      }, Math.floor(gs/10));
-
-    }
-
-    this.getResult(afterResult);
-  }
-  initializeRoots() {
-    const rWrapper = this.g.append("g")
-           .attr("class","roots");
-    //Initialize roots
-    const r = new Root(this.id + "_root", this.id, this.x, this.y);
-    this.roots.push(r);
-  }
-
-  draw() {
-    var x = this.x, y = this.y;
-    this.g = svg.append("g")
-            .attr("class","plant seedling")
-            .attr("id", this.id);
-
-    const HEIGHT = 150;
-
-    var c = this.g.append("g")
-           .attr("class","chunk");
-
-    drawGround(x,y,c);
-    drawDomain(this.domain,x,y,c);
-
-    initializeRoots();
-
-    // SEED
-    var seed = drawSeed(this.word, x, y, c);
-    // MAIN BRANCH
-    c.append("line")                 // attach a line
-      .style("stroke", "black")         // colour the line
-      .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-      .attr("x1", x)     // x position of the first end of the line
-      .attr("y1", y)      // y position of the first end of the line
-      .attr("x2", x)     // x position of the second end of the line
-      .attr("y2", y-HEIGHT)    // y position of the second end of the line
-      .attr("class","main_branch");
-
-    for (let i = 0; i < this.result.length; i++) {
       var b = this.g.append("g")
              .attr("class","branch");
       var w = this.result[i],
@@ -291,22 +214,95 @@ class Plant{
       // w = w.replace(/[\|\/\\]/g, ' ');
 
       b.append("text")
-       .attr("x", x - FONT_SIZE*1/4)
-       .attr("y", y - FONT_SIZE*1.5*i - HEIGHT - FONT_SIZE)
+       .attr("x", this.currentP.x - FONT_SIZE*1/4)
+       .attr("y", this.currentP.y - FONT_SIZE*1.5*i  - this.HEIGHT - FONT_SIZE)
        .attr("dy", ".35em")
        .attr("text-anchor", flag)
        .text(w)
        .attr("class","branch_text")
 
-       if (flag == "end") x = x - w.length*4
-       else if (flag == "start") x = x +  w.length*4
+       if (flag == "end") this.currentP.x -= w.length*4
+       else if (flag == "start") this.currentP.y += w.length*4
 
-       if (i == this.result.length -1) this.endPos = {
-         "x":x,
-         "y":y - FONT_SIZE*1.5*i - HEIGHT - FONT_SIZE
-       }
-    }// End of Branch Loop
+  }
+  growRoots() {
+    for (let j = 0; j < this.roots.length; j++) {
+      this.roots[j].grow();
+      const current = this.roots[j].grow();
+      if (Math.random() < 0.01) {
+        const newr = new Root(this.id +"_root_"+guid(), this.roots[0].plantId, current.pos.x, current.pos.y, current.angle);
+        this.roots.push(newr);
+      }
+    }
+  }
 
+  grow() {
+    //setTimeout
+    let branchIdx = 0;
+    const gs = this.growingSpeed;
+    const self = this;
+
+    function  afterResult(data) {
+
+      self.updateResult(data.results);
+
+      const branchTimer = setInterval(() => {
+          if (self.result.length > 0) {
+            if(self.resultToBeDisplayed.length > 0) {
+              const w = self.resultToBeDisplayed.pop();
+              self.growBranch(w, branchIdx);
+            } else {
+              clearInterval(branchTimer);
+            }
+          }
+          branchIdx ++;
+        }, gs);
+
+      const rootTimer = setInterval(() => {
+        if (self.lifeSpan <= 0) clearInterval(rootTimer);
+        self.growRoots();
+        self.lifeSpan --;
+      }, Math.floor(gs/10));
+
+    }
+
+    this.getResult(afterResult);
+  }
+  initializeRoots() {
+    const rWrapper = this.g.append("g")
+           .attr("class","roots");
+    //Initialize roots
+    const r = new Root(this.id + "_root", this.id, this.x, this.y);
+    this.roots.push(r);
+  }
+
+  draw() {
+    var x = this.x, y = this.y;
+    this.g = svg.append("g")
+            .attr("class","plant seedling")
+            .attr("id", this.id);
+
+    var c = this.g.append("g")
+           .attr("class","chunk");
+
+    drawGround(x,y,c);
+    drawDomain(this.domain,x,y,c);
+
+    this.initializeRoots();
+
+    // SEED
+    var seed = drawSeed(this.word, x, y, c);
+    // todo, change height based on seed width
+    // this.Height = getTextWidth(this.word) + 40;
+    // MAIN BRANCH
+    c.append("line")                 // attach a line
+      .style("stroke", "grey")         // colour the line
+      .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
+      .attr("x1", x)     // x position of the first end of the line
+      .attr("y1", y)      // y position of the first end of the line
+      .attr("x2", x)     // x position of the second end of the line
+      .attr("y2", y - this.HEIGHT)    // y position of the second end of the line
+      .attr("class","main_branch");
   }
 
   animate() {
@@ -327,57 +323,25 @@ class Plant{
 class Ginkgo extends Plant {
   constructor(data) {
    super(data);
+   this.WIDTH = 400;
+   this.LENGTH = this.WIDTH/2;
+   this.START_ANGLE = -160 + Math.floor(Math.random()*60);
   }
 
   calculateTime(){
     return START_DELAY + this.result.length * 500 + 1000;
   }
 
-  draw() {
-      var x = this.x, y = this.y;
-      this.g = svg.append("g")
-             .attr("class","ginkgo seedling")
-             .attr("id", this.id);
-
-      var WIDTH = 400,
-      START_ANGLE = -160 + Math.floor(Math.random()*60),
-      HEIGHT =  WIDTH/2 - Math.floor(Math.random()*60),
-      LENGTH = WIDTH/2;
-
-      var c = this.g.append("g")
-             .attr("class","chunk");
-
-    drawGround(x,y,c)
-    // SEED
-    var seed = drawSeed(this.word,x,y,c)
-    // console.log(seed)
-    // MAIN BRANCH
-    c.append("line")                 // attach a line
-      .style("stroke", "black")         // colour the line
-      .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-      .attr("x1", x)     // x position of the first end of the line
-      .attr("y1", y)      // y position of the first end of the line
-      .attr("x2", x)     // x position of the second end of the line
-      .attr("y2", y-HEIGHT)    // y position of the second end of the line
-      .attr("class","main_branch");
-
-    drawDomain(this.domain,x,y,c)
-
-    // BRANCHES
-    y = y-HEIGHT; //move to center
-
-    for (var i = 0; i < this.result.length; i++) {
-
+  growBranch(w,i) {
+      const x = this.x, y = this.y;
       var b = this.g.append("g")
              .style("transition-delay", START_DELAY +i*500 + "ms")
              .attr("class","branch");
-      var w = this.result[i];
-      var angle = 15*i+START_ANGLE;
-      // console.log(angle)
+      var angle = 15*i+this.START_ANGLE;
 
       // find the end point
-      var endy = LENGTH * Math.sin(Math.radians(angle)) + y
-      var endx = LENGTH * Math.cos(Math.radians(angle)) + x
+      var endy = this.LENGTH * Math.sin(Math.radians(angle)) + y
+      var endx = this.LENGTH * Math.cos(Math.radians(angle)) + x
 
       b.append("line")                 // attach a line
         .style("stroke", "black")
@@ -398,12 +362,38 @@ class Ginkgo extends Plant {
          .text("            " + w )
          .attr("class","branch_text");
 
-         if (i== this.result.length -1) this.endPos = {
-           "x":x,
-           "y":y
-         }
-    }
+  }
 
+  draw() {
+      var x = this.x, y = this.y;
+      this.g = svg.append("g")
+             .attr("class","ginkgo seedling")
+             .attr("id", this.id);
+
+      var HEIGHT =  this.WIDTH/2 - Math.floor(Math.random()*60);
+
+      var c = this.g.append("g")
+             .attr("class","chunk");
+
+    drawGround(x,y,c)
+    // SEED
+    var seed = drawSeed(this.word,x,y,c)
+    // console.log(seed)
+    // MAIN BRANCH
+    c.append("line")                 // attach a line
+      .style("stroke", "black")         // colour the line
+      .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
+      .attr("x1", x)     // x position of the first end of the line
+      .attr("y1", y)      // y position of the first end of the line
+      .attr("x2", x)     // x position of the second end of the line
+      .attr("y2", y - HEIGHT)    // y position of the second end of the line
+      .attr("class","main_branch");
+
+    drawDomain(this.domain,x,y,c);
+    this.initializeRoots();
+
+    // BRANCHES
+    this.y -= HEIGHT; //move to center
   }
 }
 
@@ -622,24 +612,68 @@ class Ivy extends Plant {
 class Dandelion extends Plant {
   constructor(data) {
    super(data);
+   this.WIDTH = 400;
+   this.LENGTH = this.WIDTH/3
   }
   calculateTime(){
     return START_DELAY + this.result.length * 200 + 1000;
   }
+  growBranch(w, i){
+
+     var b = this.g.append("g")
+            .style("transition-delay", START_DELAY +i*200 + "ms")
+            .attr("class","branch");
+
+     var angle = 18*i + Math.random();
+     // console.log(angle)
+     var l = this.LENGTH + (i % 2 == 0 ?  -20 : 0);
+
+     // find the end point
+     var endy = l * Math.sin(Math.radians(angle)) + this.y
+     var endx = l * Math.cos(Math.radians(angle)) + this.x
+
+     b.append("line")                 // attach a line
+       .style("stroke", "black")
+       .style("position", "absolute")         // colour the line
+       .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
+       .attr("x1", this.x)     // x position of the first end of the line
+       .attr("y1", this.y)      // y position of the first end of the line
+       .attr("x2", endx)     // x position of the second end of the line
+       .attr("y2", endy)     // y position of the second end of the line
+       .attr("class","branch_line");
+
+       b.append("text")
+        .attr("x", endx-20)
+        .attr("y", endy-20)
+        .style("transform", "translate(5px) rotate("+ (angle/3) +"deg) ")
+        .style("transform-origin", this.x + "px " + this.y + "px 0px")
+        .attr("dy", ".35em")
+        .text(w)
+        // .attr("")
+        .attr("class","branch_text");
+
+      if (i == this.result.length -1) this.endPos = {
+        "x":endx,
+        "y":endy
+      }
+
+     //drawText
+
+  }
   draw() {
     var x = this.x, y = this.y;
-    var WIDTH = 400, LENGTH = WIDTH/3;
+    var WIDTH = this.WIDTH, LENGTH = this.LENGTH;
 
      this.g = svg.append("g")
            .attr("class","dandelion seedling")
            .attr("id", this.id);
      var c = this.g.append("g")
             .attr("class","chunk");
+
      drawGround(x,y,c);
 
+     this.initializeRoots();
      var seed = drawSeed(this.word,x,y,c);
-
-
       // MAIN BRANCH
       c.append("line")                 // attach a line
         .style("stroke", "black")         // colour the line
@@ -649,60 +683,145 @@ class Dandelion extends Plant {
         .attr("x2", x)     // x position of the second end of the line
         .attr("y2", y-LENGTH)    // y position of the second end of the line
         .attr("class","main_branch");
+
      drawDomain(this.domain,x,y,c);
 
-     y = y - 200;
-     for (var i = 0; i < 20; i++) {
-       var b = this.g.append("g")
-              .style("transition-delay", START_DELAY +i*200 + "ms")
-              .attr("class","branch");
+     this.y = this.y - 200;
+  }
+}
 
-       var w = this.result[i];
-       var angle = 18*i + Math.random();
-       // console.log(angle)
-       var l = i%2 ==0 ? LENGTH -20: LENGTH;
+class Koru extends Plant {
+  constructor(data) {
+   super(data);
+   this.totalLength = 13 + Math.floor(Math.random()*5);
+   this.spiralWrapper;
+  }
 
-       // find the end point
-       var endy = l * Math.sin(Math.radians(angle)) + y
-       var endx = l * Math.cos(Math.radians(angle)) + x
+  calculateTime(){
+    return this.totalAnimation = START_DELAY +  this.totalLength * 200 + 3000;
+  }
 
-       b.append("line")                 // attach a line
-         .style("stroke", "black")
-         .style("position", "absolute")         // colour the line
-         .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
+  growBranch(w, i) {
+      const b = this.spiralWrapper.append("tspan")
+             .style("font-size", FONT_SIZE + i)
+             .style("transition-delay", START_DELAY +i*200 + "ms")
+             .text(w + " ")
+  }
+
+  draw() {
+    var x = this.x, y = this.y;
+    this.g = svg.append("g")
+           .attr("class","koru seedling")
+           .attr("id", this.id);
+
+    var c = this.g.append("g")
+           .attr("class","chunk");
+
+    var w = getTextWidth(this.word);
+
+     drawSeed(this.word, x,y,c)
+
+       // MAIN BRANCH
+       c.append("line")                 // attach a line
          .attr("x1", x)     // x position of the first end of the line
          .attr("y1", y)      // y position of the first end of the line
-         .attr("x2", endx)     // x position of the second end of the line
-         .attr("y2", endy)     // y position of the second end of the line
-         .attr("class","branch_line");
+         .attr("x2", x)     // x position of the second end of the line
+         .attr("y2", y - w - 60)    // y position of the second end of the line
+         .attr("class","main_branch");
 
-         b.append("text")
-          .attr("x", endx-20)
-          .attr("y", endy-20)
-          .style("transform", "translate(5px) rotate("+ (angle/2) +"deg) ")
-          .style("transform-origin", x + "px " + y + "px 0px")
-          .attr("dy", ".35em")
-          .text(w)
-          // .attr("")
-          .attr("class","branch_text");
 
-        if (i== this.result.length -1) this.endPos = {
-          "x":endx,
-          "y":endy
-        }
-     }
+      var t = this.g.append("text")
+       .attr("class", "koruResult")
+       .attr("transform", "translate(" + (x - 100) +"," + (y - w - 250) +") scale(0.5)")
 
-     //drawText
+      this.spiralWrapper = t.append("textPath")
+       .attr("xlink:href",'#Spiral');
 
+
+  }
+}
+
+class Bamboo extends Plant {
+  constructor(data) {
+   super(data);
+  }
+
+  calculateTime(){
+    return this.totalAnimation = START_DELAY + this.result.length * 1000 + 1000;
+  }
+
+  growBranch(w, i) {
+
+      const x = this.currentP.x, y = this.currentP.y;
+
+      var b = this.g.append("g")
+             .style("transition-delay", START_DELAY + i * 1000 + "ms")
+             .attr("class","branch");
+      var content = w + (i == 0 ? "" : "=");
+      var h = getTextWidth(content, true);
+
+      if (i == 1) {
+        setTimeout(function(){
+          adjustView(x,y + window.innerHeight / 2);
+        }, START_DELAY + (i + 1) * 1000)
+      }
+
+      b.append("text")
+       .attr("x", x)
+       .attr("y", y)
+       .attr("dy", ".35em")
+       .attr("text-anchor", "end")
+       .text(content)
+       .attr("class","branch_text");
+
+       this.currentP.y -= h;
+  }
+
+  draw() {
+    var x = this.x, y = this.y;
+    this.g = svg.append("g")
+           .attr("class","bamboo seedling")
+           .attr("id", this.id);
+
+    var WIDTH = 500;
+
+    var c = this.g.append("g")
+           .attr("class","chunk");
+
+    drawGround(x,y,c);
+    drawDomain(this.domain, x, y, c)
+    this.initializeRoots();
+
+    var HEIGHT = getTextWidth(this.word, true);
+
+    c.append("text")
+     .attr("x", x - FONT_SIZE/2)
+     .attr("y", y - 10)
+     .style("writing-mode", "tb")
+     .attr("text-anchor", "end")
+     .attr("dy", ".35em")
+     .text(this.word)
+     .attr("class","seed");
+
+       // MAIN BRANCH
+       c.append("line")                 // attach a line
+         .attr("x1", x)     // x position of the first end of the line
+         .attr("y1", y)      // y position of the first end of the line
+         .attr("x2", x)     // x position of the second end of the line
+         .attr("y2", y - HEIGHT)    // y position of the second end of the line
+         .attr("class","main_branch");
+
+      this.currentP.x += 30;
+      this.currentP.y -= 10;
   }
 }
 
 var PLANTS = {
 "ginkgo":Ginkgo,
 "plant":Plant,
-// "koru":koru,
+"koru":Koru,
 "ivy":Ivy,
-// "bamboo":bamboo,
+"bamboo":Bamboo,
 "pine":Pine,
 "dandelion":Dandelion
 }
@@ -722,8 +841,9 @@ var FONT_SIZE = 14,
 // ************** Generate the diagram  *****************
 
 var margin = {top: 20, right: 50, bottom: 20, left: 50},
-width = window.innerWidth,
-height = 2000;
+    width = window.innerWidth,
+    height = 2000;
+
 var timeOutTracker = null;
 // var diagonal = d3.svg.diagonal()
 //  .projection(function(d) { return [d.y, d.x]; });
@@ -764,8 +884,13 @@ var data = {
 let soil = [];
 
 initializeSoil();
-plant("thought",'nature', "pine", 300, 400);
-plant("humanity",'technology', "ivy", 700, 450);
+
+plant("thought",'nature', "pine", 150, 600)
+
+plant("anguish",'society', "dandelion", 400, 650, 7000)
+plant("humanity",'technology', "ivy", 550, 550, 15000)
+plant("soap",'sea', "ginkgo", 940, 630, 20000)
+plant("body",'literature', "plant", 1400, 610, 30000)
 /**********************************/
 
 function checkIntersections(rootId, x, y, x1, y1){
@@ -815,17 +940,18 @@ function lineRect(x1, y1, x2, y2, rx, ry, rw, rh) {
 }
 
 function initializeSoil() {
-  const stopWords = ['i','me','my','myself','we','our','ours','ourselves','you','your','yours','yourself','yourselves','he','him','his','himself','she','her','hers','herself','it','its','itself','they','them','their','theirs','themselves','what','which','who','whom','this','that','these','those','am','is','are','was','were','be','been','being','have','has','had','having','do','does','did','doing','a','an','the','and','but','if','or','because','as','until','while','of','at','by','for','with','about','against','between','into','through','during','before','after','above','below','to','from','up','down','in','out','on','off','over','under','again','further','then','once','here','there','when','where','why','how','all','any','both','each','few','more','most','other','some','such','no','nor','not','only','own','same','so','than','too','very','s','t','can','will','just','don','should','now', ",", ".",":","'","?","!","“","”"];
+  const stopWords = ['i','me','my','myself','we','our','ours','ourselves','you','your','yours','yourself','yourselves','he','him','his','himself','she','her','hers','herself','it','its','itself','they','them','their','theirs','themselves','what','which','who','whom','this','that','these','those','am','is','are','was','were','be','been','being','have','has','had','having','do','does','did','doing','a','an','the','and','but','if','or','because','as','until','while','of','at','by','for','with','about','against','between','into','through','during','before','after','above','below','to','from','up','down','in','out','on','off','over','under','again','further','then','once','here','there','when','where','why','how','all','any','both','each','few','more','most','other','some','such','no','nor','not','only','own','same','so','than','too','very','s','t','can','will','just','don','should','now'];
 
+  const punctuations = [",", ".",":","'","?","!","“","”"];
 
-  let xPos = 100, yPos = 500;
+  let xPos = 100, yPos = 700;
 
   jQuery.get('text.txt', function(data) {
     const allContexts = data.split("--");
     const soil = allContexts[Math.floor(Math.random()*allContexts.length)];
     const words = RiTa.tokenize(soil);
     for (let w of words) {
-      const t = new soilWord(w, xPos, yPos, !stopWords.includes(w));
+      const t = new soilWord(w, xPos, yPos, !(stopWords.includes(w) || punctuations.includes(w)));
       xPos += t.boundingBox.width + Math.random()*40+ 10;
       if (xPos > window.innerWidth-200) {
         yPos += 30;
@@ -873,7 +999,7 @@ function guid() {
     return _p8() + _p8(true) + _p8(true) + _p8();
 }
 
-function plant(word, domain, p, x, y) {
+function plant(word, domain, p, x, y, delay=0) {
   var data = {
     "id": guid(),
     "type":p,
@@ -883,10 +1009,14 @@ function plant(word, domain, p, x, y) {
     "y":y,
   };
 
-  var plant = new PLANTS[p](data);
-  plant.draw();
-  plant.grow();
-  plant.animate();
+  setTimeout(function(){
+    var plant = new PLANTS[p](data);
+    plant.draw();
+    plant.grow();
+    plant.animate();
+  }, delay)
+
+
 }
 
 function generateSequence(word, domain, x, y){
@@ -971,6 +1101,11 @@ function randomPlant() {
     return keys[ keys.length * Math.random() << 0];
 };
 
+function getTextWidth(text, isVertical) {
+  var test = isVertical ? document.getElementById("verticalTest") : document.getElementById("Test");
+  test.innerHTML = text;
+  return isVertical ? test.clientHeight : test.clientWidth;
+}
 
 function clearCanvas() {
    clearTimeout(timeoutTracker);
