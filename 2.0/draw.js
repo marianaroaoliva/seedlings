@@ -842,7 +842,7 @@ var FONT_SIZE = 14,
 
 var margin = {top: 20, right: 50, bottom: 20, left: 50},
     width = window.innerWidth,
-    height = 2000;
+    height = 1000;
 
 var timeOutTracker = null;
 // var diagonal = d3.svg.diagonal()
@@ -885,9 +885,9 @@ let soil = [];
 
 initializeSoil();
 
-plant("distance",'anatomy', "pine", 150, 500)
+plant("soap",'sea', "ginkgo", 150, 500)
 plant("humanity",'technology', "ivy", 250, 450, 15000)
-plant("soap",'sea', "ginkgo", 600, 530, 20000)
+plant("distance",'anatomy', "pine", 600, 530, 20000)
 plant("body",'literature', "plant", 1000, 510, 30000)
 /**********************************/
 
