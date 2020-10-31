@@ -885,10 +885,10 @@ let soil = [];
 
 initializeSoil();
 
-plant("distance",'anatomy', "pine", 150, 600)
-plant("humanity",'technology', "ivy", 450, 550, 15000)
-plant("soap",'sea', "ginkgo", 940, 630, 20000)
-plant("body",'literature', "plant", 1400, 610, 30000)
+plant("distance",'anatomy', "pine", 150, 500)
+plant("humanity",'technology', "ivy", 450, 450, 15000)
+plant("soap",'sea', "ginkgo", 940, 530, 20000)
+plant("body",'literature', "plant", 1400, 510, 30000)
 /**********************************/
 
 function checkIntersections(rootId, x, y, x1, y1){
@@ -942,7 +942,7 @@ function initializeSoil() {
 
   const punctuations = [",", ".",":","'","?","!","“","”"];
 
-  let xPos = 100, yPos = 700;
+  let xPos = 100, yPos = 600;
 
   jQuery.get('text.txt', function(data) {
     const allContexts = data.split("--");
