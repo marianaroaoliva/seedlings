@@ -36,9 +36,14 @@ class soilWord {
                   .attr("x", this.x)
                   .attr("y", this.y)
                   .call(dragEvent)
-                  .on("click", this.clicked);
+                  .on("click", this.clicked)
+                  .on("dblclick", this.dblclick);
     this.boundingBox = document.getElementById(this.id).getBBox();
     if (active) soil.push(this);
+  }
+
+  dblclick(event,d) {
+    console.log("grow new plant");
   }
 
   clicked(event, d) {
@@ -48,7 +53,6 @@ class soilWord {
         .attr("stroke", "black")
       .transition()
       .attr("stroke", "")
-
   }
 
 }
@@ -375,7 +379,7 @@ class Plant{
     // if(newSeed) this.word = newSeed;
 
     this.clear();
-    this.draw();
+    // this.draw();
     this.grow();
   }
 }
@@ -406,6 +410,11 @@ class Ginkgo extends Plant {
   clear() {
     super.clear();
     this.START_ANGLE = -160 + Math.floor(Math.random()*60);
+  }
+
+  reGenerate(newSeed) {
+    super.reGenerate();
+    this.updateBranch();
   }
 
   growBranch(w,i) {
@@ -959,12 +968,14 @@ var data = {
 
 let soil = [];
 
+const testPlants = ["ginkgo", "plant", "ivy"];
+shuffle(testPlants);
 initializeSoil();
 adjustView(700);
-plant("soap",'sea', randomPlant(), getRandomArbitrary(200, 240), 700)
-plant("humanity",'technology', randomPlant(), getRandomArbitrary(350, 400), 650, 15000)
+plant("soap",'sea', testPlants[0], getRandomArbitrary(100, 200), 720)
+plant("humanity",'technology',  testPlants[1], getRandomArbitrary(350, 400), 600, 15000)
 // plant("distance",'anatomy', "pine", 600, 530, 20000)
-plant("body",'literature', randomPlant(), getRandomArbitrary(900, 1000), 710, 30000)
+plant("body",'literature', testPlants[2], getRandomArbitrary(900, 1000), 710, 30000)
 /**********************************/
 
 function checkIntersections(r){
@@ -979,6 +990,7 @@ function checkIntersections(r){
     if (collid) {
       const newW = soil[i].text;
       const pos = RiTa.pos(newW)[0];
+      if (newW.indexOf("’") > 0) return;
       if (r.plant.lookFor && pos.indexOf(r.plant.lookFor) < 0) {
         console.log("The word is not what the plant looks for.", newW, pos);
         return;
@@ -986,12 +998,10 @@ function checkIntersections(r){
       const plant = plants["" + plantId];
       plant.updateDomain(RiTa.stem(newW), RiTa.LANCASTER);
       clearInterval(r.timer);
-      if (r.plant.branchTimer == null && r.plant.next != null) {
+      r.plant.next = r.plant.endWord;
+      if (r.plant.branchTimer == null) {
         r.plant.reGenerate();
-      } else {
-        r.plant.next = r.plant.endWord;
       }
-
     }
   }
   return false;
@@ -1042,7 +1052,7 @@ function initializeSoil() {
     const words = RiTa.tokenize(soil);
     for (let w of words) {
       const t = new soilWord(w, xPos, yPos, !(stopWords.includes(w) || punctuations.includes(w)));
-      xPos += (t.boundingBox.width + Math.random()*10 + 15);
+      xPos += (t.boundingBox.width + Math.random()*10+ 10);
       const rightEdge = window.innerWidth - 100 > LEFT_MARGIN + 1100 ? LEFT_MARGIN + 1100 : window.innerWidth-100;
       if (xPos > rightEdge) {
         yPos += 30;
@@ -1215,6 +1225,25 @@ function adjustView(y, now){
   $('html,body').animate({
          scrollTop: y +"px"
      }, now ? 500 : 3000);
+}
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
 }
 
 function getUrlVars()
