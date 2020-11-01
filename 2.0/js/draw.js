@@ -4,6 +4,24 @@ const SCALE_FACTOR = 20;
 const STROKE_COLOR = "grey";
 $(document).ready(function() {
 
+// function dragstarted() {
+//   d3.select(this).attr("stroke", "red");
+// }
+//
+// function dragged(event, d) {
+//   console.log(event, d);
+//   d3.select(this).raise().attr("cx", d.x = event.x).attr("cy", d.y = event.y);
+// }
+//
+// function dragended() {
+//   d3.select(this).attr("stroke", STROKE_COLOR);
+// }
+
+var dragEvent = d3.drag().on("drag", function(d) {
+    d3.select(this).attr("x", d.x-10).attr("y", d.y+5);
+    // TODO: update soilWord object
+  });
+
 class soilWord {
   constructor(text, x, y, active) {
     this.x = x;
@@ -17,30 +35,39 @@ class soilWord {
                   .text(this.text)
                   .attr("x", this.x)
                   .attr("y", this.y)
+                  .call(dragEvent)
+                  .on("click", this.clicked);
     this.boundingBox = document.getElementById(this.id).getBBox();
     if (active) soil.push(this);
   }
 
-  onDrag() {
-    // todo;
+  clicked(event, d) {
+    if (event.defaultPrevented) return; // dragged
+
+    d3.select(this).transition()
+        .attr("stroke", "black")
+      .transition()
+      .attr("stroke", "")
+
   }
+
 }
 
 class Root {
 
-  constructor(id, plantId, x, y, a) {
+  constructor(id, plant, x, y, a) {
     this.x = x;
     this.y = y;
     this.initialAngle = a;
     this.id = id;
-    this.plantId = plantId;
-    this.life = 100;
+    this.plant = plant;
+    this.life = 70;
 
     // path info
     this.currentPos = {x:x,y:y};
     this.currentAngle = 0;
     this.nextPos = {x:x,y:y};
-    this.wrapper = d3.select("#" + plantId + " .roots").append("g")
+    this.wrapper = d3.select("#" + plant.id + " .roots").append("g")
                       .attr("class","root")
                       .attr("id", this.id);
     // text
@@ -51,7 +78,7 @@ class Root {
     const noiseX = this.currentPos.x/SCALE_FACTOR + Math.random()*0.1;
     const noiseY = this.currentPos.y/SCALE_FACTOR + Math.random()*0.1;
 
-    const angle = this.initialAngle ? this.initialAngle + Math.random() * Math.PI : noise.simplex2(noiseX, noiseY) * Math.PI + Math.PI/2;
+    const angle = this.initialAngle ? (this.initialAngle + getRandomArbitrary(0.3, 0.5) * Math.PI) : noise.simplex2(noiseX, noiseY) * Math.PI + Math.PI/2;
     const dis = Math.random() * SCALE_FACTOR/5; // scale
     const deltaX = dis * Math.cos(angle);
     const deltaY = dis * Math.sin(angle);
@@ -77,7 +104,7 @@ class Root {
         .attr("y2", this.nextPos.y)
       this.history.push(this.currentPos);
       this.life --;
-      checkIntersections(this.id, this.currentPos.x, this.currentPos.y, this.nextPos.x, this.nextPos.y);
+      checkIntersections(this);
       // update current with next after append
       this.currentPos.x = this.nextPos.x;
       this.currentPos.y = this.nextPos.y;
@@ -109,8 +136,8 @@ class Plant{
     this.g;
     this.totalAnimation =   data.results ? this.calculateTime() : 0;
     this.roots = [];
-    this.growingSpeed = 1000
-    this.lifeSpan = 200;
+    this.growingSpeed = 1000;
+    this.lifeSpan = 300;
 
     this.datamuseResultMax = 5;
     this.HEIGHT = 100;
@@ -128,6 +155,27 @@ class Plant{
       this.domain = word;
       $('#'+this.id + " .chunk .domain").text(word);
     }
+  }
+
+  calculateHeight() {
+    return this.word.length*13 + 10;
+  }
+
+  updateSeed(word) {
+    if (this.word != word) {
+      this.word = word;
+      const seed = $('#'+this.id + " .chunk .seed");
+      const h = word.length*13;
+      seed.text(word)
+       .attr("y", this.y - h + FONT_SIZE)
+      this.HEIGHT = this.calculateHeight();
+    }
+  }
+
+  clear() {
+    this.lifeSpan += 200;
+    this.currentP = {x:this.x,y:this.y};
+    this.g.selectAll('.branch').remove();
   }
 
   getResult(callback){
@@ -227,12 +275,14 @@ class Plant{
        else if (flag == "start") this.currentP.y += w.length*4
 
   }
-  growRoots() {
+
+  growRoots(timer) {
     for (let j = 0; j < this.roots.length; j++) {
       this.roots[j].grow();
       const current = this.roots[j].grow();
-      if (Math.random() < 0.02) {
-        const newr = new Root(this.id +"_root_"+guid(), this.roots[0].plantId, current.pos.x, current.pos.y, current.angle);
+      if (Math.random() < 0.02 && this.roots.length < 10) {
+        const newr = new Root(this.id +"_root_"+guid(), this.roots[0].plant, current.pos.x, current.pos.y, current.angle);
+        newr.timer = timer;
         this.roots.push(newr);
       }
     }
@@ -245,16 +295,17 @@ class Plant{
     const self = this;
 
     function  afterResult(data) {
-
       self.updateResult(data.results);
-
-      const branchTimer = setInterval(() => {
+      self.endWord = data.endWord
+      self.branchTimer = setInterval(() => {
           if (self.result.length > 0) {
             if(self.resultToBeDisplayed.length > 0) {
               const w = self.resultToBeDisplayed.pop();
               self.growBranch(w, branchIdx);
             } else {
-              clearInterval(branchTimer);
+              clearInterval(self.branchTimer);
+              self.branchTimer = null;
+              setTimeout(function(){self.reGenerate();}, 3000);
             }
           }
           branchIdx ++;
@@ -262,7 +313,7 @@ class Plant{
 
       const rootTimer = setInterval(() => {
         if (self.lifeSpan <= 0) clearInterval(rootTimer);
-        self.growRoots();
+        self.growRoots(rootTimer);
         self.lifeSpan --;
       }, Math.floor(gs/10));
 
@@ -270,13 +321,15 @@ class Plant{
 
     this.getResult(afterResult);
   }
+
   initializeRoots() {
     const rWrapper = this.g.append("g")
            .attr("class","roots");
     //Initialize roots
-    const r = new Root(this.id + "_root", this.id, this.x, this.y);
+    const r = new Root(this.id + "_root", this, this.x, this.y);
     this.roots.push(r);
   }
+
 
   draw() {
     var x = this.x, y = this.y;
@@ -291,11 +344,10 @@ class Plant{
     drawDomain(this.domain,x,y,c);
 
     this.initializeRoots();
-
     // SEED
-    var seed = drawSeed(this.word, x, y, c);
-    // todo, change height based on seed width
-    // this.Height = getTextWidth(this.word) + 40;
+    var seed = drawSeed(this.word, x, y-10, c);
+    // change height based on seed width
+    this.HEIGHT = this.calculateHeight();
     // MAIN BRANCH
     c.append("line")                 // attach a line
       .style("stroke", STROKE_COLOR)         // colour the line
@@ -314,28 +366,48 @@ class Plant{
     }
   }
 
-  reGenerate(){
-    this.getResult(function(){
-      this.draw();
-      this.anime();
-    });
+  reGenerate(newSeed) {
+    if(this.next == null) return;
+    this.updateSeed(this.next);
+    this.next = null;
+    // if(newSeed) this.word = newSeed;
+
+    this.clear();
+    this.draw();
+    this.grow();
   }
 }
 
 class Ginkgo extends Plant {
   constructor(data) {
    super(data);
-   this.WIDTH = 400;
+   this.WIDTH = 330;
    this.LENGTH = this.WIDTH/2;
    this.START_ANGLE = -160 + Math.floor(Math.random()*60);
+   this.growingSpeed = 800;
+   this.lookFor = "nn";
+  }
+
+  updateBranch() {
+    this.g.selectAll('.main_branch').attr("y2", this.y - this.HEIGHT);
+    this.currentP.y -= this.HEIGHT;
   }
 
   calculateTime(){
     return START_DELAY + this.result.length * 500 + 1000;
   }
 
+  calculateHeight() {
+    return this.word.length*13 + 50;
+  }
+
+  clear() {
+    super.clear();
+    this.START_ANGLE = -160 + Math.floor(Math.random()*60);
+  }
+
   growBranch(w,i) {
-      const x = this.x, y = this.y;
+      const x = this.x, y = this.currentP.y;
       var b = this.g.append("g")
              .style("transition-delay", START_DELAY +i*500 + "ms")
              .attr("class","branch");
@@ -372,14 +444,13 @@ class Ginkgo extends Plant {
              .attr("class","ginkgo seedling")
              .attr("id", this.id);
 
-      var HEIGHT =  this.WIDTH/2 - Math.floor(Math.random()*60);
-
       var c = this.g.append("g")
              .attr("class","chunk");
 
     drawGround(x,y,c)
     // SEED
-    var seed = drawSeed(this.word,x,y,c)
+    var seed = drawSeed(this.word,x,y-20,c)
+    this.HEIGHT = this.calculateHeight();
     // console.log(seed)
     // MAIN BRANCH
     c.append("line")                 // attach a line
@@ -388,14 +459,14 @@ class Ginkgo extends Plant {
       .attr("x1", x)     // x position of the first end of the line
       .attr("y1", y)      // y position of the first end of the line
       .attr("x2", x)     // x position of the second end of the line
-      .attr("y2", y - HEIGHT)    // y position of the second end of the line
+      .attr("y2", y - this.HEIGHT)    // y position of the second end of the line
       .attr("class","main_branch");
 
     drawDomain(this.domain,x,y,c);
     this.initializeRoots();
 
     // BRANCHES
-    this.y -= HEIGHT; //move to center
+    this.currentP.y -= this.HEIGHT; //move to center
   }
 }
 
@@ -408,19 +479,19 @@ class Pine extends Plant {
    this.HEIGHT = 80;
   }
 
-  processSpecificParameters(p, seed, result) {
-    const s = seed.charAt(0), e = seed.charAt(seed.length-1);
-    let attribute = "";
-    const lastOne = result.length > 0 ? result[result.length-1] : seed;
-    if (lastOne.length > 2) {
-      attribute = s + "?".repeat(lastOne.length-3) + e;
-    }
-    else {
-      return false;
-    }
-    p["sp"] = attribute;
-    return p;
-  }
+  // processSpecificParameters(p, seed, result) {
+  //   const s = seed.charAt(0), e = seed.charAt(seed.length-1);
+  //   let attribute = "";
+  //   const lastOne = result.length > 0 ? result[result.length-1] : seed;
+  //   if (lastOne.length > 2) {
+  //     attribute = s + "?".repeat(lastOne.length-3) + e;
+  //   }
+  //   else {
+  //     return false;
+  //   }
+  //   p["sp"] = attribute;
+  //   return p;
+  // }
 
   calculateTime(){
     return this.totalAnimation = START_DELAY + this.result.length * 1500 + 1000;
@@ -479,37 +550,32 @@ class Pine extends Plant {
        .text(word)
        .attr("class","branch_text");
 
-       // update endPos
-       this.endPos = {
-         "x":this.x,
-         "y":this.y
-       }
   }
 
-  grow() {
-    //setTimeout
-    let branchIdx = 0;
-    const branchTimer = setInterval(() => {
-      const self = this;
-      let w;
-      if (self.result > 15) clearInterval(branchTimer);
-      self.getNewWord(function(w) {
-        if (!w) clearInterval(branchTimer);
-        self.growBranch(w, branchIdx);
-        branchIdx ++;
-      });
-
-    }, this.growingSpeed);
-
-
-    const rootTimer = setInterval(() => {
-      const self = this;
-      if (self.lifeSpan <= 0) clearInterval(rootTimer);
-      self.growRoots();
-      self.lifeSpan --;
-    }, Math.floor(this.growingSpeed/10));
-
-  }
+  // grow() {
+  //   //setTimeout
+  //   let branchIdx = 0;
+  //   this.branchTimer = setInterval(() => {
+  //     const self = this;
+  //     let w;
+  //     if (self.result > 15) clearInterval(this.branchTimer);
+  //     self.getNewWord(function(w) {
+  //       if (!w) clearInterval(this.branchTimer);
+  //       self.growBranch(w, branchIdx);
+  //       branchIdx ++;
+  //     });
+  //
+  //   }, this.growingSpeed);
+  //
+  //
+  //   const rootTimer = setInterval(() => {
+  //     const self = this;
+  //     if (self.lifeSpan <= 0) clearInterval(rootTimer);
+  //     self.growRoots();
+  //     self.lifeSpan --;
+  //   }, Math.floor(this.growingSpeed/10));
+  //
+  // }
 
 
 }
@@ -558,11 +624,11 @@ class Ivy extends Plant {
               .attr("class","branch");
        var v = idx % 2 == 0 ? -1 : 1;
 
-       this.pointer += FONT_SIZE * w.length * 2/3;
+       this.currentP.x += FONT_SIZE * w.length * 2/3;
        var ypos = this.y + (FONT_SIZE * v + Math.random() * 15) - FONT_SIZE * 3;
 
        b.append("text")
-        .attr("x", this.pointer)
+        .attr("x", this.currentP.x)
         .attr("y", ypos)
         .attr("dy", ".35em")
         .attr("text-anchor", "middle")
@@ -693,7 +759,7 @@ class Dandelion extends Plant {
 
      drawDomain(this.domain,x,y,c);
 
-     this.y = this.y - 200;
+     this.currentP.y = this.y - 200;
   }
 }
 
@@ -826,11 +892,11 @@ class Bamboo extends Plant {
 var PLANTS = {
 "ginkgo":Ginkgo,
 "plant":Plant,
-"koru":Koru,
+// "koru":Koru,
 "ivy":Ivy,
-"bamboo":Bamboo,
-"pine":Pine,
-"dandelion":Dandelion
+// "bamboo":Bamboo,
+// "pine":Pine,
+// "dandelion":Dandelion
 }
 
 // *****************************//
@@ -841,14 +907,15 @@ Math.radians = function(degrees) {
 var FONT_SIZE = 14,
     DASH_STYLE = FONT_SIZE/2 + ", " + FONT_SIZE/2,
     SECTION_GAP = 50, // between two plants
-    GROUND_WIDTH = 400,
+    GROUND_WIDTH = 200,
     START_DELAY = 500, // chunk - branch
-    ANIME = true;
+    ANIME = true,
+    LEFT_MARGIN = 200;
 
 // ************** Generate the diagram  *****************
 
 var margin = {top: 20, right: 50, bottom: 20, left: 50},
-    width = window.innerWidth,
+    width = window.innerWidth + LEFT_MARGIN*2,
     height = 1100;
 
 var timeOutTracker = null;
@@ -892,21 +959,37 @@ let soil = [];
 
 initializeSoil();
 adjustView(700);
-plant("soap",'sea', "ginkgo", 140, 700)
-plant("humanity",'technology', "ivy", 350, 650, 15000)
+plant("soap",'sea', randomPlant(), getRandomArbitrary(200, 240), 700)
+plant("humanity",'technology', randomPlant(), getRandomArbitrary(350, 400), 650, 15000)
 // plant("distance",'anatomy', "pine", 600, 530, 20000)
-plant("body",'literature', "plant", 1000, 710, 30000)
+plant("body",'literature', randomPlant(), getRandomArbitrary(900, 1000), 710, 30000)
 /**********************************/
 
-function checkIntersections(rootId, x, y, x1, y1){
+function checkIntersections(r){
+  const rootId = r.id,
+        x = r.currentPos.x, y = r.currentPos.y,
+        x1 = r.nextPos.x, y1 = r.nextPos.y;
   // id - "_root" = plant id
   const plantId = rootId.split("_")[0];
   for (var i = 0; i < soil.length; i++) {
     let b = soil[i].boundingBox;
     const collid = lineRect(x,y,x1,y1,b.x,b.y,b.width,b.height);
     if (collid) {
+      const newW = soil[i].text;
+      const pos = RiTa.pos(newW)[0];
+      if (r.plant.lookFor && pos.indexOf(r.plant.lookFor) < 0) {
+        console.log("The word is not what the plant looks for.", newW, pos);
+        return;
+      }
       const plant = plants["" + plantId];
-      plant.updateDomain(RiTa.stem(soil[i].text), RiTa.LANCASTER);
+      plant.updateDomain(RiTa.stem(newW), RiTa.LANCASTER);
+      clearInterval(r.timer);
+      if (r.plant.branchTimer == null && r.plant.next != null) {
+        r.plant.reGenerate();
+      } else {
+        r.plant.next = r.plant.endWord;
+      }
+
     }
   }
   return false;
@@ -949,7 +1032,7 @@ function initializeSoil() {
 
   const punctuations = [",", ".",":","'","?","!","“","”"];
 
-  let xPos = 100, yPos = 800;
+  let xPos = LEFT_MARGIN+50, yPos = 800;
 
   jQuery.get('text.txt', function(data) {
     const allContexts = data.split("--");
@@ -957,16 +1040,20 @@ function initializeSoil() {
     const words = RiTa.tokenize(soil);
     for (let w of words) {
       const t = new soilWord(w, xPos, yPos, !(stopWords.includes(w) || punctuations.includes(w)));
-      xPos += t.boundingBox.width + Math.random()*32+ 10;
-      const rightEdge = window.innerWidth-100 > 900 ? 900 : window.innerWidth-100;
+      xPos += (t.boundingBox.width + Math.random()*10+ 10);
+      const rightEdge = window.innerWidth - 100 > LEFT_MARGIN + 1100 ? LEFT_MARGIN + 1100 : window.innerWidth-100;
       if (xPos > rightEdge) {
         yPos += 30;
-        xPos = 100;
+        xPos = LEFT_MARGIN+50;
       }
     }
   })
 
 
+}
+
+function getRandomArbitrary(min, max) {
+  return Math.random() * (max - min) + min;
 }
 
 function generateSequenceFromData(data) {
@@ -1011,7 +1098,7 @@ function plant(word, domain, p, x, y, delay=0) {
     "type":p,
     "seed": word,
     "domain":domain,
-    "x":x,
+    "x":x+ LEFT_MARGIN,
     "y":y,
   };
 
@@ -1043,7 +1130,6 @@ function generateSequence(word, domain, x, y){
     }
     var plant = new PLANTS[p](data);
     plant.getResult(function() {
-      console.log(plant);
       adjustView(plant.y);
       plant.draw();
       plant.animate();
@@ -1072,7 +1158,7 @@ function anime(g) {
 }
 
 function drawSeed(seed,x,y,g) {
-  var h = seed.length*15;
+  var h = seed.length*13;
   return g.append("text")
    .attr("x", x + FONT_SIZE/2)
    .attr("y", y - h + FONT_SIZE)

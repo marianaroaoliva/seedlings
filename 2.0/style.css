@@ -10,6 +10,10 @@
   font-family: 'Monospace';
   src: url('Monospace.ttf')  format('truetype');
 }
+@font-face {
+  font-family: 'CourierM';
+  src: url('CourierM.ttf')  format('truetype');
+}
 
 svg, form, #remove{
   -webkit-touch-callout: none; /* iOS Safari */
@@ -24,7 +28,7 @@ svg line{
   opacity:0.5;
 }
 body{
-  overflow-x: hidden;
+  /* overflow-x: hidden; */
 }
 
 .content{
@@ -182,7 +186,7 @@ button:hover, #run:hover, #remove:hover {
 } */
 
 /****** General CSS *******/
-g text {font: 14px 'Monospace';x: 655;y: 200;}
+g text {font: 14px 'CourierM';x: 655;y: 200;}
 g text.soil {
   z-index:30;
 }
@@ -216,7 +220,7 @@ g text.soil {
 textPath {
   letter-spacing: 18px;
 }
-.seedling:hover{
+.soil:hover{
   cursor:pointer;
 }
 .dandelion .branch_text{
