@@ -19,8 +19,13 @@ $(document).ready(function() {
 
 var dragEvent = d3.drag().on("drag", function(d) {
     d3.select(this).attr("x", d.x-10).attr("y", d.y+5);
-    // TODO: update soilWord object
+    // TODO: update soilWord object, d3 drag, how to pass variable
   });
+
+function dragged(plant, d){
+  console.log(plant, d)
+  d3.select(this).attr("x", d.x-10).attr("y", d.y+5);
+}
 
 class soilWord {
   constructor(text, x, y, active) {
@@ -35,7 +40,8 @@ class soilWord {
                   .text(this.text)
                   .attr("x", this.x)
                   .attr("y", this.y)
-                  .call(dragEvent)
+                  // .call(dragEvent)
+                  .on("drag",dragged(this))
                   .on("click", this.clicked);
     this.boundingBox = document.getElementById(this.id).getBBox();
     if (active) soil.push(this);
