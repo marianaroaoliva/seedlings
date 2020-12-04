@@ -1,21 +1,37 @@
+// Switches
+const isCompost = true;
+const ANIME = true;
+
 // noise
 noise.seed(Math.random());
 const SCALE_FACTOR = 20;
+const COMPOST_TIME = 4000;
 const STROKE_COLOR = "grey";
+const FONT_SIZE = 14,
+    DASH_STYLE = FONT_SIZE/2 + ", " + FONT_SIZE/2,
+    SECTION_GAP = 50, // between two plants
+    GROUND_WIDTH = 200,
+    START_DELAY = 500, // chunk - branch
+    LEFT_MARGIN = 200;
 
 const dragEvent = d3.drag().on("drag", function(d) {
     d3.select(this).attr("x", d.x-10).attr("y", d.y+5);
     // TODO: update soilWord object
   });
 
+const stopWords = ['i','me','my','myself','we','our','ours','ourselves','you','your','yours','yourself','yourselves','he','him','his','himself','she','her','hers','herself','it','its','itself','they','them','their','theirs','themselves','what','which','who','whom','this','that','these','those','am','is','are','was','were','be','been','being','have','has','had','having','do','does','did','doing','a','an','the','and','but','if','or','because','as','until','while','of','at','by','for','with','about','against','between','into','through','during','before','after','above','below','to','from','up','down','in','out','on','off','over','under','again','further','then','once','here','there','when','where','why','how','all','any','both','each','few','more','most','other','some','such','no','nor','not','only','own','same','so','than','too','very','s','t','can','will','just','don','should','now'];
+
+const punctuations = [",", ".",":","'","?","!","“","”"];
 
 class SoilWord {
+
   constructor(text, x, y, active) {
     this.id = guid();
     this.text = text;
 
     this.x = x;
     this.y = y;
+    this.active = this.active ? this.isValidity() : false;
     const tmp = d3.select("#soil").append("text")
                   .attr("class","soil")
                   .style("fill-opacity", active ? 1: 0.5)
@@ -28,6 +44,10 @@ class SoilWord {
                   .on("dblclick", this.dblclick);
     this.boundingBox = document.getElementById(this.id).getBBox();
     if (active) soil.push(this);
+  }
+
+  isValid(){
+    return !(stopWords.includes(w) || punctuations.includes(w));
   }
 
   dblclick(event,d) {
@@ -140,6 +160,7 @@ class Plant{
     this.lifeSpan = 300;
     this.datamuseResultMax = 5;
     this.HEIGHT = 100;
+    this.COMPOST_DISTANCE = 50;
 
     // Save it plants
     plants[this.id+""] = this;
@@ -294,12 +315,12 @@ class Plant{
     const gs = this.growingSpeed;
     const self = this;
 
-    function  afterResult(data) {
+    function afterResult(data) {
       self.updateResult(data.results);
       self.endWord = data.endWord
       self.branchTimer = setInterval(() => {
           if (self.result.length > 0) {
-            if(self.resultToBeDisplayed.length > 0) {
+            if (self.resultToBeDisplayed.length > 0) {
               const w = self.resultToBeDisplayed.pop();
               self.growBranch(w, branchIdx);
             } else {
@@ -361,15 +382,51 @@ class Plant{
     }
   }
 
+  compost(){
+    const FALLING_TIME = 1000;
+    const t = d3.transition()
+    .duration(FALLING_TIME)
+    .ease(d3.easeLinear);
+
+    console.log("compost");
+    this.lifeSpan += 200;
+    this.currentP = {x:this.x,y:this.y};
+    // (TODO: branches animation?)
+    // all branch_text -> soil
+    const self = this;
+    this.g.selectAll('.branch_text').each(function(d){
+      d3.select(this).style("transform","");
+      d3.select(this).transition(t).attr("x",self.x);
+      d3.select(this).transition(t).attr("y",self.y);
+      const w = d3.select(this).text().replace(/(\||\/|\\| )+/g, "");
+      const x = d3.select(this).attr('x'),
+            y =  parseFloat(d3.select(this).attr('y')) + self.COMPOST_DISTANCE;
+      setTimeout(function(){
+        // create new soil words
+        const s = new SoilWord(w, x, y, true);
+        self.g.selectAll('.branch').remove();
+      }, FALLING_TIME)
+    })
+    // remove outer branch layer
+
+    // TODO: words falling animation
+  }
+
   reGenerate(newSeed) {
     if(this.next == null) return;
     this.updateSeed(this.next);
     this.next = null;
     // if(newSeed) this.word = newSeed;
-
-    this.clear();
-    // this.draw();
-    this.grow();
+    if (isCompost) {
+      this.compost();
+      const self = this;
+      setTimeout(function(){
+        self.grow();
+      }, COMPOST_TIME);
+    } else{
+      this.clear();
+      this.grow();
+    }
   }
 }
 
@@ -379,8 +436,9 @@ class Ginkgo extends Plant {
    this.WIDTH = 330;
    this.LENGTH = this.WIDTH/2;
    this.START_ANGLE = -160 + Math.floor(Math.random()*60);
-   this.growingSpeed = 800;
+   this.growingSpeed = 1000;
    this.lookFor = "nn";
+   this.COMPOST_DISTANCE = 150;
   }
 
   updateBranch() {
@@ -463,7 +521,7 @@ class Ginkgo extends Plant {
 class Pine extends Plant {
   constructor(data) {
    super(data);
-   this.growingSpeed = 2000;
+   this.growingSpeed = 5000;
    this.lifeSpan = 300;
    this.WIDTH = 400;
    this.HEIGHT = 80;
@@ -551,6 +609,8 @@ class Ivy extends Plant {
    super(data);
    this.pointer = this.x;
    this.datamuseResultMax = 50;
+   this.COMPOST_DISTANCE = 100;
+   this.growingSpeed = 2000;
   }
 
   calculateTime(){
@@ -624,9 +684,7 @@ class Ivy extends Plant {
 
     drawDomain(this.domain, x+100, y, c);
     this.initializeRoots();
-
-    drawMainBranch(this.x+50, this.y+20, this.x, this.y + (FONT_SIZE + Math.random() * 15) - FONT_SIZE * 3);
-
+    drawMainBranch(this.x+50, this.y+20, this.x, this.y + (FONT_SIZE + Math.random() * 15) - FONT_SIZE * 3, c);
   }
 
   processSpecificParameters(p, seed, result) {
@@ -641,7 +699,8 @@ class Dandelion extends Plant {
   constructor(data) {
    super(data);
    this.WIDTH = 400;
-   this.LENGTH = this.WIDTH/3
+   this.LENGTH = this.WIDTH/3;
+   this.growingSpeed = 500;
   }
   calculateTime(){
     return START_DELAY + this.result.length * 200 + 1000;
@@ -755,6 +814,7 @@ class Koru extends Plant {
 class Bamboo extends Plant {
   constructor(data) {
    super(data);
+   this.growingSpeed = 3000;
   }
 
   calculateTime(){

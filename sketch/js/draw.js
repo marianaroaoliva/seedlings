@@ -1,12 +1,4 @@
 
-var FONT_SIZE = 14,
-    DASH_STYLE = FONT_SIZE/2 + ", " + FONT_SIZE/2,
-    SECTION_GAP = 50, // between two plants
-    GROUND_WIDTH = 200,
-    START_DELAY = 500, // chunk - branch
-    ANIME = true,
-    LEFT_MARGIN = 200;
-
 // ************** Generate the diagram  *****************
 
 var margin = {top: 20, right: 50, bottom: 20, left: 50},
@@ -52,7 +44,7 @@ var data = {
 
 let soil = [];
 
-const testPlants = ["ginkgo", "plant", "ivy"];
+const testPlants = ["ivy","plant", "ginkgo"];
 // shuffle(testPlants);
 initializeSoil();
 adjustView(700);
@@ -124,10 +116,6 @@ function lineRect(x1, y1, x2, y2, rx, ry, rw, rh) {
 }
 
 function initializeSoil() {
-  const stopWords = ['i','me','my','myself','we','our','ours','ourselves','you','your','yours','yourself','yourselves','he','him','his','himself','she','her','hers','herself','it','its','itself','they','them','their','theirs','themselves','what','which','who','whom','this','that','these','those','am','is','are','was','were','be','been','being','have','has','had','having','do','does','did','doing','a','an','the','and','but','if','or','because','as','until','while','of','at','by','for','with','about','against','between','into','through','during','before','after','above','below','to','from','up','down','in','out','on','off','over','under','again','further','then','once','here','there','when','where','why','how','all','any','both','each','few','more','most','other','some','such','no','nor','not','only','own','same','so','than','too','very','s','t','can','will','just','don','should','now'];
-
-  const punctuations = [",", ".",":","'","?","!","“","”"];
-
   let xPos = LEFT_MARGIN+50, yPos = 800;
 
   jQuery.get('text.txt', function(data) {
@@ -135,8 +123,8 @@ function initializeSoil() {
     const soil = allContexts[Math.floor(Math.random()*allContexts.length)];
     const words = RiTa.tokenize(soil);
     for (let w of words) {
-      const t = new SoilWord(w, xPos, yPos, !(stopWords.includes(w) || punctuations.includes(w)));
-      xPos += (t.boundingBox.width + Math.random()*10+ 10);
+      const t = new SoilWord(w, xPos, yPos, true);
+      xPos += (t.boundingBox.width + Math.random() * 10+ 10);
       const rightEdge = window.innerWidth - 100 > LEFT_MARGIN + 1100 ? LEFT_MARGIN + 1100 : window.innerWidth-100;
       if (xPos > rightEdge) {
         yPos += 30;

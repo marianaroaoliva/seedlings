@@ -68,6 +68,7 @@ select {
   font-family:sans-serif;
   background-color: #EEE;
 }
+
 .interface{
     top: 100px;
     left: 0;
@@ -180,7 +181,6 @@ button:hover, #run:hover, #remove:hover {
 .darktheme g text {
   color:white !important;
 }
-
 /* line {
   stroke:white !important;
 } */
@@ -217,6 +217,9 @@ g text.soil {
 .plant .branch_text{
   white-space: pre;
   }
+.branch_text {
+  transition:all 2s;
+}
 textPath {
   letter-spacing: 18px;
 }
