@@ -2,19 +2,20 @@
 noise.seed(Math.random());
 const SCALE_FACTOR = 20;
 const STROKE_COLOR = "grey";
-$(document).ready(function() {
 
-var dragEvent = d3.drag().on("drag", function(d) {
+const dragEvent = d3.drag().on("drag", function(d) {
     d3.select(this).attr("x", d.x-10).attr("y", d.y+5);
     // TODO: update soilWord object
   });
 
+
 class SoilWord {
   constructor(text, x, y, active) {
+    this.id = guid();
+    this.text = text;
+
     this.x = x;
     this.y = y;
-    this.text = text;
-    this.id = guid();
     const tmp = d3.select("#soil").append("text")
                   .attr("class","soil")
                   .style("fill-opacity", active ? 1: 0.5)
@@ -47,12 +48,13 @@ class SoilWord {
 class Root {
 
   constructor(id, plant, x, y, a) {
+    this.life = 70;
+
+    this.id = id;
+    this.plant = plant;
     this.x = x;
     this.y = y;
     this.initialAngle = a;
-    this.id = id;
-    this.plant = plant;
-    this.life = 70;
 
     // path info
     this.currentPos = {x:x,y:y};
@@ -110,29 +112,36 @@ class Root {
 
 class Plant{
   constructor(data){
+    //Basic Plant info
     this.id = data.id;
     this.type = data.type;
+
+    // Text Info
     this.word = data.seed;
     this.domain = data.domain;
-    this.x = data.x;
-    this.y = data.y;
-    this.currentP = {x:this.x,y:this.y};
-
-    this.endPos;
     this.endWord;
-
     this.result = data.results ? data.results:[];
     this.resultToBeDisplayed = Array.from(this.result);
 
+    // Visuals
+    // Positions info
+    this.x = data.x;
+    this.y = data.y;
+    this.currentP = {x:this.x,y:this.y};
+    this.endPos;
+
+    // d3 elements
     this.g;
-    this.totalAnimation =   data.results ? this.calculateTime() : 0;
     this.roots = [];
+    this.totalAnimation = data.results ? this.calculateTime() : 0; // Is this still in use?
+
+    // Visual Parameters
     this.growingSpeed = 1000;
     this.lifeSpan = 300;
-
     this.datamuseResultMax = 5;
     this.HEIGHT = 100;
-    // save it to all plants
+
+    // Save it plants
     plants[this.id+""] = this;
   }
 
@@ -202,7 +211,7 @@ class Plant{
     }
 
     datamuse(p, this, function(data) {
-      console.log(data)
+      //console.log(data)
       let w = data.result[0].word;
       if(w == ".") {
         w = data.result[1].word;
@@ -342,14 +351,7 @@ class Plant{
     // change height based on seed width
     this.HEIGHT = this.calculateHeight();
     // MAIN BRANCH
-    c.append("line")                 // attach a line
-      .style("stroke", STROKE_COLOR)         // colour the line
-      .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-      .attr("x1", x)     // x position of the first end of the line
-      .attr("y1", y)      // y position of the first end of the line
-      .attr("x2", x)     // x position of the second end of the line
-      .attr("y2", y - this.HEIGHT)    // y position of the second end of the line
-      .attr("class","main_branch");
+    drawMainBranch(x,y,x,y - this.HEIGHT, c);
   }
 
   animate() {
@@ -415,14 +417,14 @@ class Ginkgo extends Plant {
       var endy = this.LENGTH * Math.sin(Math.radians(angle)) + y
       var endx = this.LENGTH * Math.cos(Math.radians(angle)) + x
 
-      b.append("line")                 // attach a line
+      b.append("line")
         .style("stroke", STROKE_COLOR)
-        .style("position", "absolute")         // colour the line
-        .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-        .attr("x1", x)     // x position of the first end of the line
-        .attr("y1", y)      // y position of the first end of the line
-        .attr("x2", endx)     // x position of the second end of the line
-        .attr("y2", endy)     // y position of the second end of the line
+        .style("position", "absolute")
+        .style("stroke-dasharray", DASH_STYLE)
+        .attr("x1", x)
+        .attr("y1", y)
+        .attr("x2", endx)
+        .attr("y2", endy)
         .attr("class","branch_line");
 
         b.append("text")
@@ -449,17 +451,7 @@ class Ginkgo extends Plant {
     // SEED
     var seed = drawSeed(this.word,x,y-20,c)
     this.HEIGHT = this.calculateHeight();
-    // console.log(seed)
-    // MAIN BRANCH
-    c.append("line")                 // attach a line
-      .style("stroke", STROKE_COLOR)         // colour the line
-      .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-      .attr("x1", x)     // x position of the first end of the line
-      .attr("y1", y)      // y position of the first end of the line
-      .attr("x2", x)     // x position of the second end of the line
-      .attr("y2", y - this.HEIGHT)    // y position of the second end of the line
-      .attr("class","main_branch");
-
+    drawMainBranch(x,y,x,y-this.HEIGHT, c);
     drawDomain(this.domain,x,y,c);
     this.initializeRoots();
 
@@ -506,33 +498,9 @@ class Pine extends Plant {
 
     this.initializeRoots();
     drawGround(x,y,c);
-
-      // SEED
-      var seed = c.append("text")
-       .attr("x", x + FONT_SIZE/2)
-       .attr("y", y - this.HEIGHT + FONT_SIZE)
-       .style("writing-mode", "tb")
-       .attr("dy", ".35em")
-       .text(this.word)
-       .attr("class","seed");
-
-       // MAIN BRANCH
-       c.append("line")                 // attach a line
-         .style("stroke", STROKE_COLOR)         // colour the line
-         .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-         .attr("x1", x)     // x position of the first end of the line
-         .attr("y1", y)      // y position of the first end of the line
-         .attr("x2", x)     // x position of the second end of the line
-         .attr("y2", y-this.HEIGHT)    // y position of the second end of the line
-         .attr("class","main_branch");
-
-  // DOMAIN
-      c.append("text")
-       .attr("x", x + FONT_SIZE/2)
-       .attr("y", y + FONT_SIZE/2)
-       .attr("dy", ".35em")
-       .text(this.domain)
-       .attr("class","domain");
+    drawSeed(seed,x,y,c,this.HEIGHT);
+    drawMainBranch(x,y,x,y - this.HEIGHT, c);
+    drawDomain(this.domain,x,y,c);
   }
 
   growBranch(word, idx) {
@@ -644,31 +612,20 @@ class Ivy extends Plant {
      var c = this.g.append("g")
             .attr("class","chunk");
 
+     // special draw ground
      c.append("line")
-       .style("stroke", STROKE_COLOR)         // colour the line
-       .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-       .attr("x1", x)     // x position of the first end of the line
-       .attr("y1", y)      // y position of the first end of the line
-       .attr("x2", x+GROUND_WIDTH)     // x position of the second end of the line
-       .attr("y2", y)    // y position of the second end of the line
+       .style("stroke", STROKE_COLOR)
+       .style("stroke-dasharray", DASH_STYLE)
+       .attr("x1", x)
+       .attr("y1", y)
+       .attr("x2", x+GROUND_WIDTH)
+       .attr("y2", y)
        .attr("class","ground");
 
     drawDomain(this.domain, x+100, y, c);
     this.initializeRoots();
 
-    drawIvyStart(this.x+50, this.y+20, this.x, this.y + (FONT_SIZE + Math.random() * 15) - FONT_SIZE * 3);
-
-       function drawIvyStart(x1,y1,x2,y2,) {
-         c.append("line")                 // attach a line
-           .style("stroke", STROKE_COLOR)         // colour the line
-           .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-           .attr("x1", x1)     // x position of the first end of the line
-           .attr("y1", y1)      // y position of the first end of the line
-           .attr("x2", x2)     // x position of the second end of the line
-           .attr("y2", y2)    // y position of the second end of the line
-           .attr("class","main_branch");
-
-       } // MAIN BRANCH
+    drawMainBranch(this.x+50, this.y+20, this.x, this.y + (FONT_SIZE + Math.random() * 15) - FONT_SIZE * 3);
 
   }
 
@@ -703,14 +660,14 @@ class Dandelion extends Plant {
      var endy = l * Math.sin(Math.radians(angle)) + this.y
      var endx = l * Math.cos(Math.radians(angle)) + this.x
 
-     b.append("line")                 // attach a line
+     b.append("line")
        .style("stroke", STROKE_COLOR)
-       .style("position", "absolute")         // colour the line
-       .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-       .attr("x1", this.x)     // x position of the first end of the line
-       .attr("y1", this.y)      // y position of the first end of the line
-       .attr("x2", endx)     // x position of the second end of the line
-       .attr("y2", endy)     // y position of the second end of the line
+       .style("position", "absolute")
+       .style("stroke-dasharray", DASH_STYLE)
+       .attr("x1", this.x)
+       .attr("y1", this.y)
+       .attr("x2", endx)
+       .attr("y2", endy)
        .attr("class","branch_line");
 
        b.append("text")
@@ -745,16 +702,7 @@ class Dandelion extends Plant {
 
      this.initializeRoots();
      var seed = drawSeed(this.word,x,y,c);
-      // MAIN BRANCH
-      c.append("line")                 // attach a line
-        .style("stroke", STROKE_COLOR)         // colour the line
-        .style("stroke-dasharray", DASH_STYLE)  // stroke-linecap type
-        .attr("x1", x)     // x position of the first end of the line
-        .attr("y1", y)      // y position of the first end of the line
-        .attr("x2", x)     // x position of the second end of the line
-        .attr("y2", y-LENGTH)    // y position of the second end of the line
-        .attr("class","main_branch");
-
+     drawMainBranch(x,y,x,y - LENGTH, c);
      drawDomain(this.domain,x,y,c);
 
      this.currentP.y = this.y - 200;
@@ -791,15 +739,7 @@ class Koru extends Plant {
     var w = getTextWidth(this.word);
 
      drawSeed(this.word, x,y,c)
-
-       // MAIN BRANCH
-       c.append("line")                 // attach a line
-         .attr("x1", x)     // x position of the first end of the line
-         .attr("y1", y)      // y position of the first end of the line
-         .attr("x2", x)     // x position of the second end of the line
-         .attr("y2", y - w - 60)    // y position of the second end of the line
-         .attr("class","main_branch");
-
+     drawMainBranch(x,y,x,y - w - 60, c);
 
       var t = this.g.append("text")
        .attr("class", "koruResult")
@@ -874,13 +814,7 @@ class Bamboo extends Plant {
      .text(this.word)
      .attr("class","seed");
 
-       // MAIN BRANCH
-       c.append("line")                 // attach a line
-         .attr("x1", x)     // x position of the first end of the line
-         .attr("y1", y)      // y position of the first end of the line
-         .attr("x2", x)     // x position of the second end of the line
-         .attr("y2", y - HEIGHT)    // y position of the second end of the line
-         .attr("class","main_branch");
+   drawMainBranch(x,y,x,y - HEIGHT, c);
 
       this.currentP.x += 30;
       this.currentP.y -= 10;
@@ -895,4 +829,51 @@ var PLANTS = {
 // "bamboo":Bamboo,
 // "pine":Pine,
 // "dandelion":Dandelion
-};
+}
+
+// Functions
+function drawSeed(seed,x,y,g,h) {
+  h = (h != undefined) ? h : seed.length*13;
+  return g.append("text")
+   .attr("x", x + FONT_SIZE/2)
+   .attr("y", y - h + FONT_SIZE)
+   .style("writing-mode", "tb")
+   .attr("dy", ".35em")
+   .text(seed)
+   .attr("class","seed");
+}
+
+function drawDomain(domain,x,y,g) {
+  g.append("text")
+   .attr("x", x + FONT_SIZE/2)
+   .attr("y", y + FONT_SIZE/2)
+   .attr("dy", ".35em")
+   .text(domain)
+   .attr("class","domain");
+}
+
+function drawGround(x,y,g) {
+  g.append("line")
+    .style("stroke", STROKE_COLOR)
+    .style("stroke-dasharray", DASH_STYLE)
+    .attr("x1", x-GROUND_WIDTH/2)
+    .attr("y1", y)
+    .attr("x2", x+GROUND_WIDTH/2)
+    .attr("y2", y)
+    .attr("class","ground");
+}
+
+function drawMainBranch(x1,y1,x2,y2,g) {
+   g.append("line")
+    .style("stroke", STROKE_COLOR)
+    .style("stroke-dasharray", DASH_STYLE)
+    .attr("x1", x1)
+    .attr("y1", y1)
+    .attr("x2", x2)
+    .attr("y2", y2)
+    .attr("class","main_branch");
+}
+
+Math.radians = function(degrees) {
+  return degrees * Math.PI / 180;
+}
